@@ -10,6 +10,7 @@
 ## مرحله ۰: محافظت از چیزهای فعلی (خیلی مهم!)
 
 قبل از هر کاری، این کارها رو بکن تا compose های در حال اجرا آسیب نبینن:
+</div>
 
 ```bash
 # 1. لیست container های در حال اجرا
@@ -28,6 +29,7 @@ docker network ls
 find / -name "docker-compose.yml" -o -name "compose.yml" 2>/dev/null
 ```
 
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 **نکته کلیدی:** برای یادگیری یه **prefix جدا** استفاده کن. مثلاً همه container هایی که می‌سازی رو با `learn-` شروع کن:
 - `learn-nginx`, `learn-postgres`, `learn-node`
 - اینطوری هیچ‌وقت با setup اصلی قاطی نمی‌شن
@@ -50,6 +52,8 @@ find / -name "docker-compose.yml" -o -name "compose.yml" 2>/dev/null
 
 ### تمرین‌های عملی:
 
+</div>
+
 ```bash
 # شروع ساده - hello world
 docker run hello-world
@@ -63,8 +67,11 @@ docker start -ai learn-ubuntu
 # پاک کردن تمیز
 docker rm learn-ubuntu
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ### دستورات ضروری که باید حفظ شی:
+</div>
+
 ```bash
 docker ps -a              # همه container ها
 docker images             # image ها
@@ -76,7 +83,7 @@ docker stop/start/restart <name>
 docker rm <name>          # حذف container
 docker rmi <image>        # حذف image
 ```
-
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 **منبع پیشنهادی:** [play-with-docker.com](https://labs.play-with-docker.com/) — بدون دست زدن به سیستم خودت تمرین کن.
 
 ---
@@ -84,6 +91,8 @@ docker rmi <image>        # حذف image
 ## مرحله ۲: Dockerfile نویسی (۱-۲ هفته)
 
 ### یه پروژه کوچیک بساز - مثلاً یه اپ Node یا Python:
+</div>
+
 
 ```dockerfile
 # نمونه Dockerfile برای Python
@@ -99,6 +108,7 @@ COPY . .
 EXPOSE 8000
 CMD ["python", "app.py"]
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ### چیزهایی که باید یاد بگیری:
 - `FROM`, `RUN`, `COPY`, `ADD`, `WORKDIR`, `ENV`, `EXPOSE`, `CMD`, `ENTRYPOINT`
@@ -115,6 +125,8 @@ CMD ["python", "app.py"]
 ## مرحله ۳: Volume و Network (۱ هفته)
 
 ### Volume:
+</div>
+
 ```bash
 # named volume
 docker volume create learn-data
@@ -123,16 +135,19 @@ docker run -v learn-data:/data ubuntu touch /data/test.txt
 # bind mount
 docker run -v $(pwd)/mydata:/data ubuntu ls /data
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 **تفاوت bind mount و named volume رو کامل بفهم** — این سوال مصاحبه‌ایه.
 
 ### Network:
+</div>
+
 ```bash
 docker network create learn-net
 docker run -d --name learn-db --network learn-net postgres:15
 docker run -it --network learn-net ubuntu bash
 # داخلش: ping learn-db  ← اینجوری با اسم resolve می‌شه
 ```
-
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 انواع network: `bridge`, `host`, `none`, `overlay` — هر کدوم کجا استفاده می‌شن؟
 
 ---
@@ -140,6 +155,7 @@ docker run -it --network learn-net ubuntu bash
 ## مرحله ۴: Docker Compose (۱ هفته)
 
 ### یه stack واقعی بساز (جدا از stack فعلی):
+</div>
 
 ```yaml
 # learn-compose/docker-compose.yml
@@ -170,7 +186,7 @@ volumes:
 networks:
   learn-net:
 ```
-
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 **نکته امنیتی برای setup فعلی‌ت:**
 - اسم project رو با `-p learn` مشخص کن: `docker compose -p learn up -d`
 - اینطوری container ها و network هاش جدا می‌شن از اونایی که داری
