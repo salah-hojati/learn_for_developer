@@ -2,3 +2,4 @@
 1. redis
 2. react
 3 .docker
+4. linux
