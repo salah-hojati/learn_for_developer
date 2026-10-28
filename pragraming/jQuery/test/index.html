@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>جلسه ۱ jQuery</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+<h1 id="title">سلام jQuery</h1>
+<button id="btn">تغییر متن</button>
+
+<script>
+    $(function() {
+        $("#btn").click(function() {
+            $("#title").text("اولین کد jQuery اجرا شد!");
+        });
+    });
+</script>
+
+</body>
+</html>
