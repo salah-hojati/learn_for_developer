@@ -35,7 +35,6 @@ This is where you'll integrate Redis into real-world Spring Boot applications. *
 
 *   **Supplementary Written Guides:** As you follow these courses, you might find these supplementary guides helpful for specific implementation details:
     *   **"How to Build a Distributed Cache with Redis in Spring Boot"**: A hands-on guide for implementing a production-ready distributed cache.
-    *   **"基于SpringBoot的Redis开发实战教程" (Spring Boot Redis Development Practical Tutorial)**: A detailed article covering integration and common development scenarios.
     *   **Spring Data Redis Official Documentation**: For in-depth reference on `RedisTemplate` and object mapping.
 
 ### 💡 Tips for Your Learning Journey

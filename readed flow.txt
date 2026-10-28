@@ -5,12 +5,13 @@
 4. linux
 5. java17
 6. Jquery
+7. Regular Expression
 
 
 
 ****************
 
-
+1. redis
 
 
 
