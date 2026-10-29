@@ -7,12 +7,14 @@
 6. Jquery
 7. Regular Expression
 8. html
+9. jpa
 
 
 
 ****************
 
 1. redis
+2. reacts
 
 
 **************
