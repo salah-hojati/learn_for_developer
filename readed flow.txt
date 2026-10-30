@@ -10,6 +10,44 @@
 9. jpa
 10.python
 11 md
+12 spring security
+13 javascript
+14 css
+15 rabbitMq
+16 kafka
+17 Elasticsearch
+18 kubernetes for developer
+19 kubernetes for devops
+20 ansible
+21 git
+22 uml
+23 jsf
+24 ejb
+25 struts 1.3
+26 jdbc
+
+27 jasper report
+28 log4j
+29 java8
+30 java 11
+30 java 21
+31 java 25
+32 maven
+33 gradle
+34 netty
+35 oracle (database)
+36 weblogic
+37 mongodb
+38 neo4j
+39 spring boot
+40 php
+
+
+
+
+
+
+
 
 
 ****************
