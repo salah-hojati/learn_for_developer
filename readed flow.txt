@@ -17,7 +17,7 @@ flow 1
 16 kafka
 17 Elasticsearch
 18 kubernetes for developer
-19 kubernetes for devops
+19 cks
 20 ansible
 21 git
 22 uml
@@ -75,6 +75,7 @@ flow 2
 16 kafka
 17 Elasticsearch
 18 kubernetes for developer
+19 cks
 **************
 flow 3
 
