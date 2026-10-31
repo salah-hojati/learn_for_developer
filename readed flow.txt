@@ -79,5 +79,5 @@ flow 3
 
 
 evey day --> linux ,java 17 , jpa
-14050809 --> linux
+14050809 --> linux  java 17
 

@@ -1,3 +1,6 @@
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 عالی! هفته‌ی دوم روی **Sealed Classes**, **Pattern Matching for `switch`**, و **HashMap / Sliding Window** تمرکز دارد. این هفته نقطه‌ی اوج Java 17 است چون Sealed + Pattern Matching + Records یک trio قدرتمند می‌سازند که در مصاحبه‌ها خیلی دیده می‌شود.
 
 ---
@@ -9,6 +12,9 @@
 **Sealed Class** به تو اجازه می‌دهد کنترل کنی چه کلاس‌هایی می‌توانند از آن ارث‌بری کنند. این یک انقلاب در طراحی domain model است.
 
 **سینتکس:**
+</div>
+
+
 ```java
 public sealed class Shape permits Circle, Rectangle, Triangle {}
 
@@ -16,6 +22,8 @@ public final class Circle extends Shape {}
 public final class Rectangle extends Shape {}
 public final class Triangle extends Shape {}
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **سه حالت برای زیرکلاس‌ها:**
 - `final` — دیگر کسی نمی‌تواند ارث‌بری کند
@@ -31,6 +39,9 @@ public final class Triangle extends Shape {}
 - مکمل عالی برای Records
 
 **مثال کاربردی:**
+</div>
+
+
 ```java
 public sealed interface PaymentMethod permits Card, Cash, Crypto {}
 
@@ -38,6 +49,8 @@ public record Card(String number, String cvv) implements PaymentMethod {}
 public record Cash(double amount) implements PaymentMethod {}
 public record Crypto(String wallet, double amount) implements PaymentMethod {}
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته‌ی مصاحبه:** Sealed + Record + Pattern Matching = replacement برای Visitor Pattern و `enum` های سنگین.
 
@@ -46,6 +59,9 @@ public record Crypto(String wallet, double amount) implements PaymentMethod {}
 **مسئله:** دو رشته‌ی `s` و `t` داده شده. آیا anagram یکدیگرند؟
 
 **راه‌حل ۱ — شمارش با آرایه:**
+</div>
+
+
 ```java
 public boolean isAnagram(String s, String t) {
     if (s.length() != t.length()) return false;
@@ -58,8 +74,13 @@ public boolean isAnagram(String s, String t) {
     return true;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **راه‌حل ۲ — HashMap (برای یونیکد):**
+</div>
+
+
 ```java
 public boolean isAnagram(String s, String t) {
     if (s.length() != t.length()) return false;
@@ -73,6 +94,10 @@ public boolean isAnagram(String s, String t) {
     return true;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
+
 
 - **پیچیدگی:** زمان O(n)، فضا O(1) یا O(k)
 - **الگو:** Frequency Count
@@ -87,6 +112,8 @@ public boolean isAnagram(String s, String t) {
 ### 🎓 بخش Java 17 (۳۰ دقیقه)
 
 **ترکیب Sealed + Record** یک الگوی idiomatic است:
+</div>
+
 
 ```java
 public sealed interface Expr permits Num, Add, Mul, Neg {}
@@ -96,6 +123,9 @@ public record Add(Expr left, Expr right) implements Expr {}
 public record Mul(Expr left, Expr right) implements Expr {}
 public record Neg(Expr operand) implements Expr {}
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 
 **چرا عالی است؟**
 - `record` برای داده‌ی immutable
@@ -106,6 +136,9 @@ public record Neg(Expr operand) implements Expr {}
 **نکته:** `record` خودش `final` است، پس `permits` نیازی به `final` اضافی ندارد.
 
 **مثال: ارزیابی expression**
+</div>
+
+
 ```java
 public double eval(Expr e) {
     return switch (e) {
@@ -116,6 +149,8 @@ public double eval(Expr e) {
     };
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 هیچ `default` لازم نیست — این قدرت Sealed + Pattern Matching است.
 
@@ -124,6 +159,9 @@ public double eval(Expr e) {
 **مسئله:** آرایه‌ای از رشته‌ها. آن‌ها را به گروه‌های anagram تقسیم کن.
 
 **راه‌حل — HashMap با کلید مرتب‌شده:**
+</div>
+
+
 ```java
 public List<List<String>> groupAnagrams(String[] strs) {
     var map = new HashMap<String, List<String>>();

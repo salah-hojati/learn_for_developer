@@ -1,3 +1,6 @@
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 عالی! هفته‌ی سوم روی **Stream API** (قلب کد مدرن جاوا)، **Linked List**, **Stack**, و **Queue** تمرکز دارد. این هفته پلی است بین Java 8 که بلدی و Java 17 که می‌خواهی مسلط شوی.
 
 ---
@@ -9,6 +12,9 @@
 **Stream** یک pipeline از عملیات روی داده است. Stream خودش داده نگه نمی‌دارد؛ فقط روی منبع (Collection, Array, I/O) کار می‌کند.
 
 **ساخت Stream:**
+</div>
+
+
 ```java
 var list = List.of(1, 2, 3, 4, 5);
 
@@ -20,12 +26,17 @@ var s5 = IntStream.rangeClosed(1, 5);            // 1..5 شامل 5
 var s6 = Stream.iterate(1, n -> n * 2).limit(5); // 1,2,4,8,16
 var s7 = Stream.generate(Math::random).limit(3); // تصادفی
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **دو نوع عملیات:**
 - **Intermediate** (تنبل): `map`, `filter`, `sorted`, `distinct`, `limit`, `skip`, `peek`, `flatMap`
 - **Terminal** (اجراشونده): `collect`, `forEach`, `reduce`, `count`, `anyMatch`, `allMatch`, `findFirst`, `min`, `max`, `toArray`
 
 **مثال پایه:**
+</div>
+
+
 ```java
 var result = list.stream()
     .filter(n -> n % 2 == 0)
@@ -34,6 +45,8 @@ var result = list.stream()
     .toList();  // Java 16+
 // [4, 16]
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکات مهم:**
 - Stream یک‌بار مصرف است. بعد از terminal operation، دیگر قابل استفاده نیست.
@@ -47,6 +60,9 @@ var result = list.stream()
 **مسئله:** یک singly linked list را معکوس کن.
 
 **تعریف Node:**
+</div>
+
+
 ```java
 class ListNode {
     int val;
@@ -55,8 +71,13 @@ class ListNode {
     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **راه‌حل — Iterative:**
+</div>
+
+
 ```java
 public ListNode reverseList(ListNode head) {
     ListNode prev = null;
