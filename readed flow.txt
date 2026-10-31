@@ -67,7 +67,8 @@
 9. jpa
 10. python
 11 md
-
+12 spring security
+13 javascript
 **************
 
 evey day --> linux ,java 17 , jpa
