@@ -44,6 +44,7 @@ flow 1
 42 swt
 43 Spring reactive
 44 vaadin
+45 cka
 
 
 
@@ -72,6 +73,8 @@ flow 2
 14 css
 15 rabbitMq
 16 kafka
+17 Elasticsearch
+18 kubernetes for developer
 **************
 flow 3
 
