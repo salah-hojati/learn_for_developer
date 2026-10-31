@@ -69,6 +69,8 @@
 11 md
 12 spring security
 13 javascript
+14 css
+15 rabbitMq
 **************
 
 evey day --> linux ,java 17 , jpa
