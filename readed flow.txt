@@ -71,6 +71,7 @@
 13 javascript
 14 css
 15 rabbitMq
+16 kafka
 **************
 
 evey day --> linux ,java 17 , jpa
