@@ -76,6 +76,8 @@ flow 2
 17 Elasticsearch
 18 kubernetes for developer
 19 cks
+20 ansible
+21 git
 **************
 flow 3
 
