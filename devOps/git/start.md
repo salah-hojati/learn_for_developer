@@ -1,4 +1,4 @@
-Learning Git, GitHub, and GitLab is a journey that takes you from managing your own code to collaborating with teams worldwide. The most effective way to learn is to understand the concepts first, then practice with hands-on commands.
+Learning Git,  GitHub, and GitLab is a journey that takes you from managing your own code to collaborating with teams worldwide. The most effective way to learn is to understand the concepts first, then practice with hands-on commands.
 
 Here is a step-by-step roadmap to guide you from the very beginning to confident collaboration.
 
