@@ -93,9 +93,19 @@ flow 2
 34 gradle
 35 netty
 36 oracle (database)
+37 weblogic
+38 mongodb
+39 neo4j
+40 spring boot
+41 php
+42 selenium
+43 swt
+44 Spring reactive
+45 vaadin
+46 cka
 **************
 flow 3
-
+1. redis
 
 
 
