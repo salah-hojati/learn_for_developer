@@ -26,12 +26,17 @@
 ### ۱.۳ ساختار و سینتکس پایه
 - تابع اصلی `$()` و تفاوت آن با `jQuery()`
 - رویداد `$(document).ready()` برای اجرای کد پس از آماده شدن DOM
+</div> 
+
 
 ```javascript
 $(document).ready(function() {
   // کدهای jQuery در اینجا قرار می‌گیرد
 });
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 
 ---
 
@@ -130,6 +135,8 @@ $(document).ready(function() {
 
 ### ۷.۳ متد اصلی `$.ajax()`
 - تنظیمات کامل (URL، type، data، dataType، success، error)
+</div> 
+
 
 ```javascript
 $.ajax({
@@ -144,6 +151,8 @@ $.ajax({
   }
 });
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 ---
 
