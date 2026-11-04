@@ -59,15 +59,19 @@ flow 3
 5. java17
 6. Jquery
 7. Regular Expression
+8. html
+9. jpa
 ******************
 flow 4
 1. redis
 2. reacts
 3. docker
 4. linux
+5. java17
 
 flow 5
 1. redis
+2. reacts
 
 
 evey day --> linux ,java 17 , jpa
