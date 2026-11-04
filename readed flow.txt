@@ -106,7 +106,13 @@ flow 2
 **************
 flow 3
 1. redis
+2. reacts
+3. docker
+4. linux
 
+flow 4
+1. redis
+2. reacts
 
 
 evey day --> linux ,java 17 , jpa
