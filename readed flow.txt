@@ -50,6 +50,7 @@ flow 2
 44 Spring reactive
 45 vaadin
 46 cka
+47 jaxbe
 **************
 flow 3
 1. redis
@@ -79,6 +80,7 @@ flow 5
 2. reacts
 3. docker
 4. linux
+5. java17
 
 flow 6
 1. redis
