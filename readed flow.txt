@@ -62,6 +62,7 @@ flow 3
 8. html
 9. jpa
 10. python
+11 md
 ******************
 flow 4
 1. redis
@@ -71,6 +72,7 @@ flow 4
 5. java17
 6. Jquery
 7. Regular Expression
+8. html
 
 flow 5
 1. redis
@@ -78,6 +80,8 @@ flow 5
 3. docker
 4. linux
 
+flow 6
+1. redis
 
 
 evey day --> linux ,java 17 , jpa
