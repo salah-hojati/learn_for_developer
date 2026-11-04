@@ -1,3 +1,6 @@
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 عالی! هفته‌ی چهارم روی **Stream پیشرفته**، **Binary Search**، **الگوریتم‌های مرتب‌سازی**، و **Comparator پیشرفته** تمرکز دارد. این هفته پایه‌ی مصاحبه‌های فنی جدی است.
 
 ---
@@ -9,14 +12,22 @@
 **چرا IntStream؟** برای جلوگیری از autoboxing. `Stream<Integer>` هر عنصر را box می‌کند؛ `IntStream` مستقیم روی `int` کار می‌کند.
 
 **ساخت:**
+</div>
+
+
 ```java
 var range = IntStream.range(1, 5);        // 1,2,3,4
 var closed = IntStream.rangeClosed(1, 5); // 1,2,3,4,5
 var fromArray = Arrays.stream(new int[]{1, 2, 3});
 var chars = "hello".chars();              // IntStream از کاراکترها
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **متدهای اختصاصی:**
+</div>
+
+
 ```java
 IntStream.rangeClosed(1, 10)
     .filter(n -> n % 2 == 0)
@@ -30,14 +41,24 @@ stats.getSum();    // 23
 stats.getAverage(); // 3.833...
 stats.getCount();  // 6
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **تبدیل بین Stream و IntStream:**
+</div>
+
+
 ```java
 var boxed = IntStream.range(1, 5).boxed();        // IntStream → Stream<Integer>
 var unboxed = list.stream().mapToInt(Integer::intValue); // Stream<Integer> → IntStream
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **متدهای مفید دیگر:**
+</div>
+
+
 ```java
 IntStream.rangeClosed(1, 5)
     .mapToObj(i -> "Item " + i)   // IntStream → Stream<String>
@@ -48,6 +69,8 @@ IntStream.rangeClosed(1, 5)
     .mapToObj(c -> (char) c)
     .forEach(System.out::print); // helloworld
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته‌ی مصاحبه:** `IntStream`, `LongStream`, `DoubleStream` برای کارایی هستند. `mapToInt`, `mapToLong`, `mapToDouble` برای تبدیل از Stream معمولی استفاده می‌شوند.
 
@@ -56,6 +79,9 @@ IntStream.rangeClosed(1, 5)
 **مسئله:** جستجوی دودویی در آرایه‌ی مرتب.
 
 **راه‌حل iterative (استاندارد):**
+</div>
+
+
 ```java
 public int binarySearch(int[] nums, int target) {
     var left = 0;
@@ -69,8 +95,13 @@ public int binarySearch(int[] nums, int target) {
     return -1;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **راه‌حل recursive:**
+</div>
+
+
 ```java
 public int binarySearch(int[] nums, int target) {
     return search(nums, target, 0, nums.length - 1);
@@ -84,6 +115,8 @@ private int search(int[] nums, int target, int left, int right) {
     return search(nums, target, left, mid - 1);
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکات حیاتی:**
 - `left + (right - left) / 2` بهتر از `(left + right) / 2` است (overflow).
@@ -91,6 +124,9 @@ private int search(int[] nums, int target, int left, int right) {
 - پیچیدگی: زمان O(log n)، فضا O(1).
 
 **الگوی `lower_bound` و `upper_bound`:**
+</div>
+
+
 ```java
 // اولین ایندکسی که nums[i] >= target
 int lowerBound(int[] nums, int target) {
@@ -116,6 +152,10 @@ int upperBound(int[] nums, int target) {
     return left;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
+
 
 **نکته‌ی مصاحبه:** در مصاحبه‌ها از تو می‌خواهند Binary Search را برای "پیدا کردن مرز" بنویسی، نه فقط پیدا کردن یک عدد. `lowerBound` و `upperBound` را حفظ کن.
 
@@ -131,6 +171,9 @@ int upperBound(int[] nums, int target) {
 **الگوی "Binary Search on Answer":** وقتی جواب یک عدد در بازه‌ی مشخصی است و می‌توانی چک کنی که یک جواب خاص معتبر است یا نه.
 
 **ساختار کلی:**
+</div>
+
+
 ```java
 int binarySearchOnAnswer(int low, int high) {
     while (low < high) {
@@ -141,8 +184,13 @@ int binarySearchOnAnswer(int low, int high) {
     return low;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **مثال: Koko Eating Bananas (LeetCode 875)**
+</div>
+
+
 ```java
 public int minEatingSpeed(int[] piles, int h) {
     var low = 1;
@@ -163,12 +211,17 @@ private boolean canFinish(int[] piles, int h, int speed) {
     return hours <= h;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته‌ی Java 17:** از `Arrays.stream(piles).max()` استفاده کردم که idiomatic است. `(p + speed - 1) / speed` یک trick برای ceil division.
 
 ### 🧩 بخش DSA (۶۰ دقیقه) — Search in Rotated Sorted Array
 
 **مسئله:** آرایه‌ی مرتبی که در نقطه‌ای چرخیده. `target` را پیدا کن.
+
+</div>
+
 
 ```java
 public int search(int[] nums, int target) {
@@ -192,6 +245,8 @@ public int search(int[] nums, int target) {
     return -1;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - **پیچیدگی:** زمان O(log n)، فضا O(1)
 - **الگو:** Modified Binary Search
@@ -208,6 +263,8 @@ public int search(int[] nums, int target) {
 ### 🎓 بخش Java 17 (۳۰ دقیقه)
 
 **Merge Sort** یک الگوریتم divide-and-conquer با پیچیدگی O(n log n) است.
+</div>
+
 
 ```java
 public void mergeSort(int[] nums) {
@@ -239,8 +296,13 @@ private void merge(int[] nums, int left, int mid, int right) {
     System.arraycopy(temp, 0, nums, left, temp.length);
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نسخه‌ی Java 17 idiom — با `Arrays.copyOfRange`:**
+</div>
+
+
 ```java
 public int[] mergeSort(int[] nums) {
     if (nums.length < 2) return nums;
@@ -261,6 +323,9 @@ private int[] merge(int[] a, int[] b) {
     return result;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 
 **ویژگی‌ها:**
 - **Stable**: ترتیب عناصر مساوی حفظ می‌شود
@@ -274,6 +339,9 @@ private int[] merge(int[] a, int[] b) {
 **مسئله:** آرایه‌ای از ۰، ۱، ۲. in-place مرتب کن.
 
 **راه‌حل — Three Pointers:**
+</div>
+
+
 ```java
 public void sortColors(int[] nums) {
     var low = 0;
@@ -294,6 +362,8 @@ private void swap(int[] nums, int i, int j) {
     nums[j] = t;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - **پیچیدگی:** زمان O(n)، فضا O(1)
 - **الگو:** Dutch National Flag
@@ -310,6 +380,8 @@ private void swap(int[] nums, int i, int j) {
 ### 🎓 بخش Java 17 (۳۰ دقیقه)
 
 **Quick Sort** با pivot و partition کار می‌کند.
+</div>
+
 
 ```java
 public void quickSort(int[] nums) {
@@ -343,8 +415,13 @@ private void swap(int[] nums, int i, int j) {
     nums[j] = t;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **بهبود: Random Pivot**
+</div>
+
+
 ```java
 private int partition(int[] nums, int low, int high) {
     var randomIdx = low + new Random().nextInt(high - low + 1);
@@ -352,6 +429,8 @@ private int partition(int[] nums, int low, int high) {
     // ... ادامه مثل قبل
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **ویژگی‌ها:**
 - **پیچیدگی:** میانگین O(n log n)، بدترین O(n²) (با pivot بد)
@@ -376,6 +455,9 @@ private int partition(int[] nums, int low, int high) {
 **مسئله:** k-امین بزرگ‌ترین عنصر را پیدا کن.
 
 **راه‌حل ۱ — Quick Select (میانگین O(n)):**
+</div>
+
+
 ```java
 public int findKthLargest(int[] nums, int k) {
     var target = nums.length - k; // ایندکس در آرایه‌ی مرتب
@@ -389,8 +471,13 @@ private int quickSelect(int[] nums, int low, int high, int target) {
     return quickSelect(nums, low, pivot - 1, target);
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **راه‌حل ۲ — Min-Heap:**
+</div>
+
+
 ```java
 public int findKthLargest(int[] nums, int k) {
     var heap = new PriorityQueue<Integer>();
@@ -401,6 +488,8 @@ public int findKthLargest(int[] nums, int k) {
     return heap.peek();
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - **Quick Select:** زمان میانگین O(n)، بدترین O(n²)، فضا O(1)
 - **Heap:** زمان O(n log k)، فضا O(k)
@@ -418,6 +507,9 @@ public int findKthLargest(int[] nums, int k) {
 ### 🎓 بخش Java 17 (۳۰ دقیقه)
 
 **Heap Sort:**
+</div>
+
+
 ```java
 public void heapSort(int[] nums) {
     var n = nums.length;
@@ -442,11 +534,16 @@ private void heapify(int[] nums, int n, int i) {
     }
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - **پیچیدگی:** زمان O(n log n) در همه حالات، فضا O(1)
 - **Stable:** ❌
 
 **Comparator پیشرفته:**
+</div>
+
+
 ```java
 var employees = new ArrayList<Employee>();
 
@@ -471,8 +568,13 @@ employees.sort(Comparator.naturalOrder());
 // سفارشی
 employees.sort((a, b) -> Double.compare(b.salary(), a.salary()));
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته‌ی Java 17 idiom:**
+</div>
+
+
 ```java
 // max با Comparator
 var top = employees.stream()
@@ -484,12 +586,16 @@ var sorted = employees.stream()
     .sorted(Comparator.comparing(Employee::name))
     .toList();
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته‌ی مصاحبه:** `Comparator.comparing(...).thenComparing(...)` بهترین روش برای مرتب‌سازی چندسطحی است. `reversed()` را در جای درست بگذار (بعد از `thenComparing` یا قبل از آن).
 
 ### 🧩 بخش DSA (۶۰ دقیقه) — Merge Intervals
 
 **مسئله:** لیستی از بازه‌ها. بازه‌های همپوشان را ادغام کن.
+</div>
+
 
 ```java
 public int[][] merge(int[][] intervals) {
@@ -515,6 +621,8 @@ public int[][] merge(int[][] intervals) {
     return result.toArray(new int[0][]);
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - **پیچیدگی:** زمان O(n log n) (مرتب‌سازی)، فضا O(n)
 - **الگو:** Sort + Merge
@@ -531,6 +639,8 @@ public int[][] merge(int[][] intervals) {
 ### 🎓 بخش Java 17 (۳۰ دقیقه)
 
 **`Collectors.teeing` (Java 12+):** دو collector را همزمان اجرا می‌کند و نتایج را ترکیب می‌کند.
+</div>
+
 
 ```java
 // min و max همزمان
@@ -543,8 +653,13 @@ var result = IntStream.of(3, 1, 4, 1, 5, 9).boxed()
         (min, max) -> new MinMax(min.orElseThrow(), max.orElseThrow())
     ));
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **مثال پیشرفته: گزارش employee**
+</div>
+
+
 ```java
 record DeptStats(long count, double avgSalary, double totalSalary) {}
 
@@ -558,8 +673,13 @@ var stats = employees.stream()
         )
     ));
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **`Collectors.summarizingDouble`:**
+</div>
+
+
 ```java
 var summary = employees.stream()
     .collect(Collectors.groupingBy(
@@ -575,6 +695,8 @@ var sum = IntStream.rangeClosed(1, 1_000_000)
     .parallel()
     .sum();
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته:** `parallelStream` فقط برای کارهای CPU-intensive و داده‌ی زیاد مفید است. برای I/O یا داده کم، overhead بیشتر از سود است.
 
@@ -585,6 +707,9 @@ var sum = IntStream.rangeClosed(1, 1_000_000)
 **مسئله:** طولانی‌ترین زیردنباله‌ی صعودی را پیدا کن.
 
 **راه‌حل ۱ — DP (O(n²)):**
+</div>
+
+
 ```java
 public int lengthOfLIS(int[] nums) {
     var n = nums.length;
@@ -602,8 +727,13 @@ public int lengthOfLIS(int[] nums) {
     return max;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **راه‌حل ۲ — Binary Search (O(n log n)):**
+</div>
+
+
 ```java
 public int lengthOfLIS(int[] nums) {
     var tails = new ArrayList<Integer>();
@@ -626,6 +756,9 @@ private int lowerBound(List<Integer> list, int target) {
     return left;
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 
 - **راه‌حل ۱:** زمان O(n²)، فضا O(n)
 - **راه‌حل ۲:** زمان O(n log n)، فضا O(n)
@@ -656,6 +789,8 @@ private int lowerBound(List<Integer> list, int target) {
 ### 🎁 پروژه‌ی هفته: Sorting Visualizer CLI
 
 یک برنامه بنویس که یک آرایه می‌گیرد و مراحل مرتب‌سازی را چاپ می‌کند.
+</div>
+
 
 ```java
 public class SortingVisualizer {
@@ -695,6 +830,9 @@ public class SortingVisualizer {
     }
 }
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 
 **توسعه‌ی اختیاری:**
 - Merge Sort, Quick Sort, Heap Sort را اضافه کن
