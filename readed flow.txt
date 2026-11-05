@@ -83,10 +83,12 @@ flow 5
 3. docker
 4. linux
 5. java17
+6. Jquery
 
 flow 6
 1. redis
 2. reacts
+3. docker
 
 
 evey day --> linux ,java 17 , jpa
