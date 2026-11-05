@@ -24,6 +24,9 @@ flow 2
 18 kubernetes for developer
 19 cks
 20 ansible
+
+
+
 21 git
 22 uml
 23 jsf
@@ -93,6 +96,9 @@ flow 6
 2. reacts
 3. docker
 4. linux
+
+fow 7
+1. redis
 
 evey day --> linux ,java 17 , jpa
 14050809 --> linux  java 17 , jpa
