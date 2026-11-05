@@ -1,3 +1,5 @@
+package week1;
+
 import java.util.Arrays;
 
 public class Day4 {
