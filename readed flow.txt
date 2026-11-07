@@ -24,9 +24,6 @@ flow 2
 18 kubernetes for developer
 19 cks
 20 ansible
-
-
-
 21 git
 22 uml
 23 jsf
@@ -54,6 +51,7 @@ flow 2
 45 vaadin
 46 cka
 47 jaxbe
+48 en
 **************
 flow 3
 1. redis
@@ -96,13 +94,13 @@ flow 5
 7. Regular Expression
 8. html
 9. jpa
-
+10. python
 flow 6
 1. redis
 2. reacts
 3. docker
 4. linux
-
+5. java17
 fow 7
 1. redis
 
