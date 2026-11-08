@@ -69,6 +69,7 @@ flow 3
 13 javascript
 14 css + 4. linux
 15 rabbitMq + 5. java17
+16 kafka + 9. jpa
 ******************
 flow 4
 1. redis
