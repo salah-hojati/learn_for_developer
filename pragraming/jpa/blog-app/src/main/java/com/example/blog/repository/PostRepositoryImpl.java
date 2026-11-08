@@ -37,15 +37,17 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         cb.isTrue(comment.get("approved"))
                     );
 
-        // ----- Projection -----
+
+
+        // بخش projection در searchDynamic
         cq.select(cb.construct(
-            PostSummary.class,
-            post.get("id"),
-            post.get("title"),
-            post.get("slug"),
-            author.get("username"),
-            commentCount.getSelection(),
-            cb.literal(PostSummary.PostStatusView.PUBLISHED)
+                PostSummary.class,
+                post.get("id"),
+                post.get("title"),
+                post.get("slug"),
+                author.get("username"),
+                commentCount.getSelection()
+                // ← دیگه cb.literal(...) نداریم
         ));
 
         // ----- Predicates داینامیک -----

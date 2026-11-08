@@ -9,6 +9,17 @@ This is the cleanest method. Run the official image or a Confluent image:
 ```bash
 docker run -p 9092:9092 apache/kafka:4.3.1
 ```
+```bash
+docker stop  e6d89cb767d3
+```
+```bash
+docker run -p 9092:9092 docker.io/apache/kafka:4.3.1
+```
+```bash
+mkdir -p ~/.config/containers
+echo 'unqualified-search-registries = ["docker.io"]' > ~/.config/containers/registries.conf
+```
+
 *(Note: If using `confluentinc/cp-kafka`, you must configure KRaft environment variables as shown in the Docker Compose example .)*
 
 **Option B: Local Scripts**

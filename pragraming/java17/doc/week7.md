@@ -1,4 +1,8 @@
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
 عالی! هفته‌ی هفتم روی **JVM و GC Tuning**، **Profiling**، و **Dynamic Programming** (قلب مصاحبه‌های سخت) تمرکز دارد. این هفته ترکیبی از عمق پلتفرمی و قدرت الگوریتمی است.
+
 
 ---
 
@@ -7,6 +11,9 @@
 ### 🎓 بخش Java 17 (۳۰ دقیقه)
 
 **ساختار JVM:**
+</div>
+
+
 ```
 ┌─────────────────────────────────────┐
 │         Class Loader Subsystem       │
@@ -24,6 +31,8 @@
 │  Interpreter | JIT | GC              │
 └─────────────────────────────────────┘
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **Runtime Data Areas:**
 
@@ -60,6 +69,9 @@
 | ذخیره | Object, Array | primitive, reference |
 
 **تنظیمات مهم:**
+</div>
+
+
 ```bash
 -Xms512m          # حداقل heap
 -Xmx2g            # حداکثر heap
@@ -69,6 +81,8 @@
 -XX:NewRatio=2    # نسبت Old/Young
 -XX:SurvivorRatio=8 # نسبت Eden/Survivor
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **نکته‌ی مصاحبه:** اگر از تو بپرسند تفاوت Heap و Stack چیست، این جدول را بگو. اگر بپرسند PermGen چه شد، بگو در Java 8 حذف و به Metaspace منتقل شد (در native memory).
 
@@ -77,6 +91,9 @@
 **مسئله:** n پله. هر بار ۱ یا ۲ پله. چند راه؟
 
 **راه‌حل ۱ — Recursive (کند):**
+</div>
+
+
 ```java
 public int climbStairs(int n) {
     if (n <= 2) return n;
@@ -115,6 +132,8 @@ public int climbStairs(int n) {
 }
 // پیچیدگی: O(n) زمان، O(1) فضا
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - **الگو:** DP / Fibonacci
 - **نکته:** این مسئله دقیقاً Fibonacci است. سه رویکرد (recursive, memo, tabulation) را بلد باش.
@@ -136,12 +155,17 @@ public int climbStairs(int n) {
 - **Shenandoah**: مشابه ZGC، نه در Oracle JDK
 
 **فعال‌سازی:**
+</div>
+
+
 ```bash
 -XX:+UseSerialGC
 -XX:+UseParallelGC
 -XX:+UseG1GC      # پیش‌فرض
 -XX:+UseZGC
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 **G1 GC — ویژگی‌ها:**
 - Heap را به regionهای مساوی تقسیم می‌کند (معمولاً ۱–۳۲MB)
@@ -151,6 +175,9 @@ public int climbStairs(int n) {
 - هدف: **Predictable Pause Times** با `-XX:MaxGCPauseMillis`
 
 **G1 Phases:**
+</div>
+
+
 ```
 Young GC → Concurrent Mark → Remark → Cleanup → Mixed GC → ...
 ```
@@ -175,6 +202,8 @@ java -Xlog:gc*:file=gc.log:time,uptime,level,tags -jar app.jar
 [2.345s][info][gc] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 
     123M->45M(512M) 12.345ms
 ```
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 
 - `123M->45M`: قبل و بعد از GC
 - `(512M)`: کل heap
@@ -187,6 +216,9 @@ java -Xlog:gc*:file=gc.log:time,uptime,level,tags -jar app.jar
 **مسئله:** آرایه‌ی پول خانه‌ها. نمی‌توانی دو خانه‌ی مجاور بدزدی. حداکثر چقدر؟
 
 **راه‌حل ۱ — Memoization:**
+</div>
+
+
 ```java
 public int rob(int[] nums) {
     var memo = new int[nums.length];

@@ -30,10 +30,24 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
     int incrementViewCount(@Param("id") Long id);
 
-    // Projection با interface
-    @Query("SELECT p.id AS id, p.title AS title, p.slug AS slug, u.username AS authorName " +
-           "FROM Post p JOIN p.author u WHERE p.status = 'PUBLISHED'")
-    List<PostListView> findAllAsView();
+    // 👇 این رو کامل جایگزین کن
+    @Query(
+        value = """
+            SELECT new com.example.blog.dto.PostSummary(
+                p.id, p.title, p.slug, u.username,
+                (SELECT COUNT(c) FROM Comment c WHERE c.post = p AND c.approved = true)
+            )
+            FROM Post p
+            JOIN p.author u
+            WHERE p.status = 'PUBLISHED'
+            """,
+        countQuery = """
+            SELECT COUNT(p.id)
+            FROM Post p
+            WHERE p.status = 'PUBLISHED'
+            """
+    )
+    Page<PostSummary> findSummaries(Pageable pageable);
 
     interface PostListView {
         Long getId();
@@ -42,15 +56,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
         String getAuthorName();
     }
 
-    // Projection با constructor expression
-    @Query("""
-        SELECT new com.example.blog.dto.PostSummary(
-            p.id, p.title, p.slug, u.username,
-            (SELECT COUNT(c) FROM Comment c WHERE c.post = p AND c.approved = true),
-            com.example.blog.dto.PostSummary.PostStatusView.PUBLISHED
-        )
-        FROM Post p JOIN p.author u
-        WHERE p.status = 'PUBLISHED'
-    """)
-    Page<PostSummary> findSummaries(Pageable pageable);
+    @Query("SELECT p.id AS id, p.title AS title, p.slug AS slug, u.username AS authorName " +
+           "FROM Post p JOIN p.author u WHERE p.status = 'PUBLISHED'")
+    List<PostListView> findAllAsView();
 }

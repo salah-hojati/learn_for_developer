@@ -32,6 +32,7 @@ matrix[1][0] = 1; // دوطرفه
 ```
 
 **مقایسه:**
+
 | ویژگی | Adjacency List | Adjacency Matrix |
 |---|---|---|
 | فضا | O(V + E) | O(V²) |
