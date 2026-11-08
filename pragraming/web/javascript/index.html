@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>javascript</title>
+    <script>
+        // declaration
+        function add(a, b) {
+            return a + b;
+        }
+
+        // arrow function (modern, concise)
+        const add2 = (a, b) => a + b;
+
+        // default parameters
+        function greet(name = "friend") {
+            return `Hello, ${name}!`;   // template literal with backticks
+        }
+       function f(){
+        add(2, 3);       // 5
+        greet();         // "Hello, friend!"
+        greet("Sam");    // "Hello, Sam!"
+       }
+    </script>
+
+</head>
+<body onload="f();">
+
+
+
+
+
+</body>
+</html>
