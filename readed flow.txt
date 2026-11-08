@@ -70,7 +70,7 @@ flow 3
 12 spring security
 13 javascript
 14 css + 4. linux
-15 rabbitMq
+15 rabbitMq+ 5. java17
 ******************
 flow 4
 1. redis
@@ -95,6 +95,7 @@ flow 5
 6. Jquery
 7. Regular Expression
 8. html
+9. jpa
 **************
 flow 6
 1. redis
@@ -102,7 +103,7 @@ flow 6
 3. docker
 4. linux
 5. java17
-
+6. Jquery
 fow 7
 1. redis
 2. reacts
