@@ -103,7 +103,7 @@ flow 6
 5. java17
 fow 7
 1. redis
-
+2. reacts
 evey day --> linux ,java 17 , jpa
 14050809 --> linux  java 17 , jpa
 
