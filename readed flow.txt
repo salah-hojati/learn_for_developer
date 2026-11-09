@@ -72,3 +72,29 @@ flow 2
 evey day --> linux ,java 17 , jpa
 14050809 --> linux  java 17 , jpa
 
+
+14050818 -->  linux  java 17 , jpa
+1. redis  ok
+2. reacts
+3. docker
+4. linux
+5. java17
+6. Jquery
+7. Regular Expression
+
+8. html
+9. jpa
+10. python
+11 md
+12 spring security
+13 javascript
+14 css
+
+15 rabbitMq
+16 kafka
+17 Elasticsearch
+18 kubernetes for developer
+19 cks
+20 ansible
+21 git
+
