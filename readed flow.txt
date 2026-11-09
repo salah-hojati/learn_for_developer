@@ -75,7 +75,7 @@ evey day --> linux ,java 17 , jpa
 
 14050818 -->  linux  java 17 , jpa
 1. redis  ok
-2. reacts
+2. reacts ok
 3. docker
 4. linux
 5. java17
