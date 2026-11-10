@@ -1,0 +1,15 @@
+@startuml
+!include style.puml
+
+title System Architecture
+
+actor User
+component "Web UI" as UI
+component "API Gateway" as API
+database "PostgreSQL" as DB
+
+User --> UI : HTTPS
+UI --> API : REST
+API --> DB : JDBC
+
+@enduml

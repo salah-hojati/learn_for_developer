@@ -1,0 +1,17 @@
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1E88E5
+}
+
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #FB8C00
+}
+
+skinparam participant {
+  BackgroundColor #F1F8E9
+  BorderColor #43A047
+}
