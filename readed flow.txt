@@ -102,8 +102,8 @@ evey day --> linux ,java 17 , jpa
 15 rabbitMq  ok
 16 kafka ok
 17 Elasticsearch ok
-18 kubernetes for developer
-19 cks
+18 kubernetes for developer ok
+19 cks  ok
 20 ansible
 21 git
 
