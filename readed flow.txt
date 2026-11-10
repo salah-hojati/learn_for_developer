@@ -107,7 +107,7 @@ evey day --> linux ,java 17 , jpa
 20 ansible ok
 21 git ok
 
-22 uml
+22 uml  ok
 23 jsf
 24 ejb
 25 struts 1.3
