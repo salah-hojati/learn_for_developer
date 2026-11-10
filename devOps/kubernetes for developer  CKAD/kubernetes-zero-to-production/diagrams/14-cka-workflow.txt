@@ -1,0 +1,172 @@
+# Module 14 | Covers: CKA/CKAD/CKS exam workflow; multi-cluster (kind/k3s), kubeconfig context switch, imperative+dry-run templates, etcd backup/restore, kubectl explain/describe/logs, time box & STAR
+# Lessons: 43-46
+
+# Exam Environment & Context Switching
++------------------------------------------------------------------+
+|              CKA/CKAD/CKS ENVIRONMENT & CONTEXTS                 |
+|                                                                  |
+|  Cluster types in lab + exam:                                    |
+|  +----------------------------------------------------------------+
+|  |  kind (Kubernetes IN Docker) - multi-node via docker        |
+|  |  k3s   - lightweight single-binary (default on CKA exam?)   |
+|  |  minikube / kubeadm      - for practice                       |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  kubeconfig management:                                            |
+|  +----------------------------------------------------------+    |
+|  |  ~/.kube/config  (current-context)                    |    |
+|  |  contexts:                                            |    |
+|  |  - kind-kind (context: kind-kind)                   |    |
+|  |  - ckad-cluster                                  |    |
+|  |  - cks-prod-cluster                            |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  Context switching:                                              |
+|  kubectl config get-contexts   (list all)                        |
+|  kubectl config use-context kind-cluster-x                    |
+|  kubectl config view --raw  (inspect server + cert data)        |
+|  kubectl config current-context                          |    |
+|                                                                  |
+|  Quick aliases (exam):                                           |
+|  alias k='kubectl'  (kubectl >=1.25 autocompletion ready)        |
+|  export do='--dry-run=client -o yaml'                          |
+|  export now='--force-conflict=false'                          |
+|                                                                  |
+|  Namespace: kubectl config set-context --current            |
+|  -n <namespace>   (or k -n <ns>)                              |
++------------------------------------------------------------------+
+
+# Imperative Commands & Dry-Run Templates
++------------------------------------------------------------------+
+|           IMPERATIVE COMMANDS + DRY-RUN TEMPLATES                  |
+|                                                                  |
+|  Dry-run workflow (generate YAML from command):                 |
+|  +----------------------------------------------------------+    |
+|  |  kubectl run nginx --image=nginx:1.25 -o yaml    \    |    |
+|  |    --dry-run=client > pod.yaml                         |    |
+|  |                                                          |    |
+|  |  kubectl create deployment web --image=nginx     \       |    |
+|  |    --port=80 -o yaml --dry-run=client > dep.yaml   |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  Imperative shortcuts (CKAD/CKA favorites):                      |
+|  k expose deployment web --port=80 --target-port=8080        |
+|  k expose rs myrs --name=svc --port=80                          |
+|  k create sa dev-sa                                            |
+|  k create secret docker-registry regcred \                    |
+|   --docker-server=... --docker-username=...                   |
+|  k create configmap cm --from-literal=KEY=VAL                 |
+|  k label nodes node-1 disktype=ssd                              |
+|  k annotate pod p1 description="staging"                        |
+|                                                                  |
+|  Patch (strategic / merge / json):                              |
+|  k patch deploy web -p '{"spec":{"replicas":3}}'        |
+|  k patch cm mycm --type merge -p                          |
+|  "data:{\"new\":\"val\"}"                                            |
+|  k patch node node-1 -p '{"metadata":{"labels": ...}}'        |
+|                                                                  |
+|  Edit vs Create-or-Apply:                                        |
+|  k edit deploy/web      (opens editor, live)                     |
+|  k apply -f file.yaml   (idempotent create/update)              |
+|  k apply --prune -f dir/ -l app=web (delete orphans)         |
++------------------------------------------------------------------+
+
+# Debugging Toolkit (explain / describe / logs / exec)
++------------------------------------------------------------------+
+|          DEBUG TOOLKIT: EXPLAIN / DESCRIBE / LOGS                  |
+|                                                                  |
+|  kubectl explain (introspect API schema):                    |
+|  +----------------------------------------------------------+    |
+|  |  kubectl explain pods.spec.containers.resources          |    |
+|  |  - shows schema, type, required fields                   |    |
+|  |  - --recursive (full tree)                                |    |
+|  |  - --api-version apps/v1 (specific version)              |    |
+|  |  - kubectl explain deploy.spec.strategy.rollingUpdate |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  kubectl describe (rich status):                                 |
+|  kubectl describe pod <name> -n <ns>                             |
+|    -> Events (Warning/Normal), QoS, conditions                  |
+|  kubectl describe deploy/web                                     |
+|    -> target, current/previous RS, replica counts               |
+|  kubectl describe node <node>                                    |
+|    -> allocatable, conditions, images, system info              |
+|                                                                  |
+|  kubectl logs:                                                    |
+|  kubectl logs <pod> -c <container>                               |
+|  kubectl logs -f <pod>                                           |
+|  kubectl logs <pod> --previous   (after a restart)             |
+|  kubectl logs -l app=web --tail=50 -n <ns>                       |
+|  kubectl logs -f <rs> --all                                     |
+|                                                                  |
+|  kubectl exec:                                                    |
+|  kubectl exec -it <pod> -c <c> -- /bin/sh                        |
+|  kubectl exec <pod> -- <cmd> <args>                              |
++------------------------------------------------------------------+
+
+# etcd Backup & Restore (CKA / CKS)
++------------------------------------------------------------------+
+|              ETCD BACKUP & RESTORE (CKA/CKS)                      |
+|                                                                  |
+|  etcd is the single source of truth (state store).               |
+|  On HA control plane, etcd runs stacked (co-located w/ API)     |
+|  on 3+ control-plane nodes using raft.                            |
+|                                                                  |
+|  SNAPSHOT (backup):                                              |
+|  +----------------------------------------------------------+    |
+|  |  ETCDCTL_API=3 etcdctl \                        |    |
+|  |  --endpoints=https://127.0.0.1:2379 \           |    |
+|  |  --cacert=/etc/kubernetes/pki/etcd/ca.crt \  |    |
+|  |  --cert=/etc/.../peer.crt \                  |    |
+|  |  --key=/etc/.../peer.key \                   |    |
+|  |  snapshot save /tmp/etcd.db               |    |
+|  +----------------------------------------------------------+    |
+|  -> upload /tmp/etcd.db to object store (S3/GCS)                |
+|                                                                  |
+|  RESTORE:                                                        |
+|  +----------------------------------------------------------+    |
+|  |  ETCDCTL_API=3 etcdctl snapshot \          |    |
+|  |  --data-dir=/var/lib/from-backup ...      |    |
+|  |  restore /tmp/etcd.db                   |    |
+|  +----------------------------------------------------------+    |
+|  -> update /etc/kubernetes/manifests/etcd.yaml:                |
+|    --data-dir=/var/lib/from-backup                            |
+|  -> kubelet restarts etcd static Pod with new data dir          |
+|  -> API server served from rest ored etcd                       |
+|                                                                  |
+|  CKS focus: disaster-recovery plan, restore verification,        |
+|  and image pull secrets / network policy post-restore sanity.    |
++------------------------------------------------------------------+
+
+# Exam Time Management (STAR & Sections)
++------------------------------------------------------------------+
+|        CKA/CKAD/CKS TIME MANAGEMENT (STAR METHOD)                 |
+|                                                                  |
+|  Exam structure (~12 questions, no hands/freebies):              |
+|  +----------------------------------------------------------------+
+|  |  CKA   - Troubleshooting + Cluster Setup + Workloads        |
+|  |  CKAD  - Configuration + Multi-container +                      |
+|  |          Helm-like templates + Observability + Networking     |
+|  |  CKS   - Security + Network Policy + Service Mesh +          |
+|  |          Secrets Management + Runtime Security + Forensics    |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  STAR METHOD per question:                                          |
+|  +----------------------------------------------------------------+
+|  |  S - Situation: read requirements carefully               |
+|  |  T - Task: identify concrete goal (yaml / flag)           |
+|  |  A - Action: use imperative + dry-run, validate, apply      |
+|  |  R - Review: kubectl get/describe/logs to verify          |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  Time box:                                                       |
+|  - Read ALL questions first (flag easy wins)                     |
+|  - 130 min CKA/CKAD/CKS -> ~10 min per question avg            |
+|  - First pass: do confident ones, skip unknown                |
+|  - Leave 5 min buffer to re-verify all via get/describe        |
+|                                                                  |
+|  Pro tools:                                                      |
+|  - kubectl config use-context (cluster switch)                  |
+|  - /tmp notes: write flags (no autocomplete penalty)              |
+|  - grep -v '^$' + cut for quick YAML edits                     |
++------------------------------------------------------------------+

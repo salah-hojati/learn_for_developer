@@ -1,0 +1,244 @@
+# Module 04: Networking - CNI, Services, Ingress, NetworkPolicy
+# Lessons: 13-18
+
+# CNI Plugin Assigning Pod IPs
++------------------------------------------------------------------+
+|                    CNI PLUGIN POD IP ASSIGNMENT                  |
+|                                                                  |
+|  POD CREATION REQUEST                                            |
+|         |                                                        |
+|         v                                                        |
+|  +--------------------------+                                    |
+|  |       KUBELET            |                                    |
+|  |  (on worker node)        |                                    |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              | CRI: Create Sandbox (pause container)             |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |    CONTAINER RUNTIME     |                                    |
+|  |   (containerd/cri-o)     |                                    |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              | CNI: ADD (network namespace, container ID)        |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |       CNI PLUGIN         |  (e.g., Calico, Flannel, Weave,   |
+|  |   (calico, flannel,      |   Cilium, Antrea, kube-router)     |
+|  |    weave, cilium...)     |                                    |
+|  |                          |                                    |
+|  |  1. Allocate IP from     |                                    |
+|  |     Pod CIDR pool        |                                    |
+|  |  2. Create veth pair     |                                    |
+|  |     (host <-> pod ns)    |                                    |
+|  |  3. Configure host routes|                                    |
+|  |  4. Setup pod interface  |                                    |
+|  |     (eth0) in netns      |                                    |
+|  |  5. Return IP config     |                                    |
+|  |     to runtime           |                                    |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              | IP config (IP, gateway, routes, DNS)              |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |       POD NETWORK NS     |                                    |
+|  |  +------------------+    |                                    |
+|  |  |  pause container |    |                                    |
+|  |  |  (sandbox)       |    |                                    |
+|  |  |  eth0: 10.244.1.5|    |                                    |
+|  |  +------------------+    |                                    |
+|  |  |  app container   |    |                                    |
+|  |  |  (shares netns)  |    |                                    |
+|  |  +------------------+    |                                    |
+|  +--------------------------+                                    |
+|                                                                  |
+|  HOST ROUTE TABLE:                                               |
+|  10.244.1.0/24 dev cni0  proto kernel  scope link  src 10.244.1.1|
+|  10.244.2.0/24 via 192.168.1.20 dev eth0  (remote node)          |
++------------------------------------------------------------------+
+
+# Service ClusterIP -> kube-proxy DNAT -> Pod
++------------------------------------------------------------------+
+|              SERVICE CLUSTERIP -> KUBE-PROXY -> POD              |
+|                                                                  |
+|  CLIENT POD (10.244.1.10)                    TARGET PODS         |
+|         |                                    (endpoints)         |
+|         |  DNS: my-service.default.svc.cluster.local             |
+|         |  Resolves to: 10.96.0.100 (ClusterIP)                 |
+|         v                                    +-----------+       |
+|  +------------------+                        |  Pod-A    |       |
+|  |   CLIENT POD     |  1. TCP SYN            |  10.244.1.|       |
+|  |                  |  dst: 10.96.0.100:80   |  20:8080  |       |
+|  +--------+---------+                        +-----+-----+       |
+|           |                                     |               |
+|           |  2. Packet hits                     |               |
+|           |     node iptables/                  |               |
+|           |     IPVS rules                      |               |
+|           v                                     v               |
+|  +-----------------------------------------------------------------+
+|  |                    KUBE-PROXY (on each node)                   |
+|  |                                                                 |
+|  |  MODE: iptables (default) / IPVS / nftables                   |
+|  |                                                                 |
+|  |  iptables RULES (example):                                     |
+|  |  -t nat -A KUBE-SERVICES -d 10.96.0.100/32 -p tcp            |
+|  |    --dport 80 -j KUBE-SVC-XYZ                                 |
+|  |  -t nat -A KUBE-SVC-XYZ -m statistic --mode random           |
+|  |    --probability 0.5 -j KUBE-SEP-ABC                          |
+|  |  -t nat -A KUBE-SEP-ABC -p tcp -j DNAT                       |
+|  |    --to-destination 10.244.1.20:8080                          |
+|  |  -t nat -A KUBE-SEP-DEF -p tcp -j DNAT                       |
+|  |    --to-destination 10.244.2.15:8080                          |
+|  |                                                                 |
+|  |  IPVS: Virtual Server 10.96.0.100:80                          |
+|  |    -> Real Server 10.244.1.20:8080 (wlc)                     |
+|  |    -> Real Server 10.244.2.15:8080 (wlc)                     |
+|  +-----------------------------------------------------------------+
+|           |                                                     |
+|           |  3. DNAT: dst IP rewritten to Pod IP                |
+|           v                                                     |
+|  +-----------------------------------------------------------------+
+|  |                    NETWORK (CNI)                               |
+|  |  Route to Pod IP via host veth / overlay / BGP                |
+|  +-----------------------------------------------------------------+
+|           |                                                     |
+|           v                                                     |
+|  +-----------+-----------+  +-----------+-----------+           |
+|  |  Pod-A    |           |  |  Pod-B    |           |           |
+|  | 10.244.1.|           |  | 10.244.2.|           |           |
+|  | 20:8080  |           |  | 15:8080   |           |           |
+|  +-----------+-----------+  +-----------+-----------+           |
+|                                                                  |
+|  KUBE-PROXY DOES NOT PROXY DATA PATH (except userspace mode)    |
+|  - Only programs kernel data plane (iptables/IPVS)              |
+|  - Zero userspace copies for traffic                            |
++------------------------------------------------------------------+
+
+# Ingress Controller -> Service -> Pod
++------------------------------------------------------------------+
+|                   INGRESS CONTROLLER -> SERVICE -> POD           |
+|                                                                  |
+|  EXTERNAL CLIENT                                                 |
+|       |                                                          |
+|       |  HTTP/HTTPS (port 80/443)                                |
+|       v                                                          |
+|  +--------------------------+                                    |
+|  |   LOAD BALANCER          |  (AWS ALB, GCP LB, MetalLB,        |
+|  |   (L4 / L7)              |   nginx-ingress LB service)        |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              |  Forward to Ingress Controller Pod                |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |   INGRESS CONTROLLER     |  (nginx, traefik, haproxy,         |
+|  |   (Deployment/DaemonSet) |   envoy, contour)                  |
+|  |                          |                                    |
+|  |  - Watches Ingress resources                                   |
+|  |  - Generates config (nginx.conf)                              |
+|  |  - Termination: TLS, HTTP/2, WebSocket                        |
+|  |  - Rate limiting, auth, rewrite, canary                       |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              |  Route based on Host/Path rules                   |
+|              v                                                   |
+|  +--------------------------+    +--------------------------+    |
+|  |   SERVICE: frontend      |    |   SERVICE: api           |    |
+|  |   ClusterIP: 10.96.1.50  |    |   ClusterIP: 10.96.2.100 |    |
+|  |   Selector: app=web      |    |   Selector: app=api      |    |
+|  +-----------+--------------+    +-----------+--------------+    |
+|              |                                   |              |
+|              | kube-proxy DNAT                    | kube-proxy  |
+|              v                                   v              |
+|  +--------------------------+    +--------------------------+    |
+|  |   POD: web-1             |    |   POD: api-1             |    |
+|  |   10.244.1.10:8080       |    |   10.244.2.20:8000       |    |
+|  |   POD: web-2             |    |   POD: api-2             |    |
+|  |   10.244.1.11:8080       |    |   10.244.2.21:8000       |    |
+|  +--------------------------+    +--------------------------+    |
+|                                                                  |
+|  INGRESS RESOURCE EXAMPLE:                                       |
+|  apiVersion: networking.k8s.io/v1                                |
+|  kind: Ingress                                                   |
+|  metadata:                                                       |
+|    name: my-ingress                                              |
+|    annotations:                                                  |
+|      nginx.ingress.kubernetes.io/rewrite-target: /              |
+|  spec:                                                           |
+|    ingressClassName: nginx                                       |
+|    rules:                                                        |
+|    - host: app.example.com                                       |
+|      http:                                                       |
+|        paths:                                                    |
+|        - path: /                                                 |
+|          pathType: Prefix                                        |
+|          backend:                                                |
+|            service: {name: frontend, port: {number: 80}}        |
+|        - path: /api                                              |
+|          pathType: Prefix                                        |
+|          backend:                                                |
+|            service: {name: api, port: {number: 80}}             |
++------------------------------------------------------------------+
+
+# NetworkPolicy Enforcement
++------------------------------------------------------------------+
+|                      NETWORKPOLICY ENFORCEMENT                   |
+|                                                                  |
+|  NETWORKPOLICY: deny-all-except-frontend                         |
+|  +----------------------------------------------------------+    |
+|  |  spec:                                                   |    |
+|  |    podSelector:                                          |    |
+|  |      matchLabels: {app: backend}                         |    |
+|  |    policyTypes: [Ingress]                                |    |
+|  |    ingress:                                              |    |
+|  |    - from:                                               |    |
+|  |      - podSelector: {matchLabels: {app: frontend}}      |    |
+|  |      ports: [{protocol: TCP, port: 8080}]                |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  ENFORCEMENT POINTS:                                             |
+|                                                                  |
+|  +--------------------------+                                    |
+|  |      CNI PLUGIN          |  (Calico, Cilium, Weave, Kube-    |
+|  |  (with policy support)   |   router, Antrea)                  |
+|  |                          |                                    |
+|  |  - Translates NetworkPolicy                                  |
+|  |    to dataplane rules (eBPF,                                  |
+|  |    iptables, WireGuard, VXLAN)                                |
+|  |  - Enforces at Pod network interface                          |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              |  Pod-to-Pod traffic                              |
+|              v                                                   |
+|  +-----------------------------------------------------------------+
+|  |                 POD NETWORK NAMESPACE                          |
+|  |                                                                 |
+|  |  +------------------+    +------------------+                  |
+|  |  |  FRONTEND POD    |    |  BACKEND POD     |                  |
+|  |  |  (app=frontend)  |    |  (app=backend)   |                  |
+|  |  |                  |    |                  |                  |
+|  |  |  ALLOWED:        |    |  INGRESS RULES:  |                  |
+|  |  |  - Egress to     |    |  - Allow from    |                  |
+|  |  |    backend:8080  |    |    frontend      |                  |
+|  |  |                  |    |    pods only     |                  |
+|  |  |  DENIED:         |    |  - Deny all      |                  |
+|  |  |  - Egress to     |    |    other         |                  |
+|  |  |    database      |    |                  |                  |
+|  |  +------------------+    +------------------+                  |
+|  |                                                                 |
+|  |  CNI DATAPLANE (e.g., Cilium eBPF):                            |
+|  |  - Attach to Pod's veth/TC ingress/egress                      |
+|  |  - Match labels via identity map                               |
+|  |  - Allow/Drop at kernel level                                  |
+|  +-----------------------------------------------------------------+
+|                                                                  |
+|  DEFAULT DENY:                                                   |
+|  - No NetworkPolicy = all traffic allowed                        |
+|  - Any NetworkPolicy selecting a Pod = default deny             |
+|    for that direction (Ingress/Egress)                          |
+|  - Must explicitly allow desired traffic                        |
+|                                                                  |
+|  POLICY TYPES:                                                   |
+|  - Ingress: Control incoming to Pod                              |
+|  - Egress: Control outgoing from Pod                             |
+|  - Both: Combined                                                |
++------------------------------------------------------------------+

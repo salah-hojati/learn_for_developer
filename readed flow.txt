@@ -101,7 +101,7 @@ evey day --> linux ,java 17 , jpa
 14050819 -->  linux  java 17 , jpa
 15 rabbitMq  ok
 16 kafka ok
-17 Elasticsearch
+17 Elasticsearch ok
 18 kubernetes for developer
 19 cks
 20 ansible

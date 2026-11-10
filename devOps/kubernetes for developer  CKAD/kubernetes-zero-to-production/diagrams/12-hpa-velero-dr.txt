@@ -1,0 +1,132 @@
+# Module 12 | Covers: HPA CPU/MEM -> scale decision, VPA/Cluster-autoscaler, PDB draining, Velero backup -> object store -> restore, canary via Argo Rollouts
+# Lessons: 35-40
+
+# HPA & Autoscaling Stack
++------------------------------------------------------------------+
+|                HPA: METRICS -> SCALE DECISION                     |
+|                                                                  |
+|  +--------------------------+                                      |
+|  |  METRICS SERVER           |  (recommended, aggregates          |
+|  |  (Deployment: metrics-    |   kubelet stats -> /apis/         |
+|  |  server)                   |   metrics.k8s.io/v1beta1)          |
+|  |  - CPU usage (millicores)|                                      |
+|  |  - memory usage (bytes)  |                                      |
+|  +-----------+--------------+                                      |
+|              |                                                   |
+|              |  custom/external metrics (Prometheus Adapter,     |
+|              v   external-metrics-apiserver)                     |
+|  +--------------------------+                                      |
+|  |  HORIZONTAL POD AUTOSCALER  |                                  |
+|  |  (control-loop, 15s default)|                                  |
+|  |                          |                                      |
+|  |  desiredReplicas =        |                                      |
+|  |  currentReplicas *        |                                      |
+|  |  ( currentMetric /        |                                      |
+|  |    targetMetric )         |                                      |
+|  |  ceil()                   |                                      |
+|  +-----------+--------------+                                      |
+|              |                                                   |
+|              v                                                   |
+|  +--------------------------+                                      |
+|  |  DEPLOYMENT / RS          |  (replicas updated)                |
+|  |  (controller sets status) |                                      |
+|  +-----------+--------------+                                      |
+|              |                                                   |
+|              |  conditions ( AbleToScale/ ScalingActive/        |
+|              v   ExternalMetricFounds)                            |
+|  +----------------------------------------------------------------+
+|  |  HPA STATUS                                              |
+|  |  currentMetrics: [{type:Resource name:cpu averageValue:65}]  |
+|  |  lastScaleTime, currentReplicas, desiredReplicas           |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  +----------------------------------------------------------------+
+|  |  AUTOSCALING STACK:                                    |
+|  |  - HPA (pods)        |  - VPA (pod template right-sizing)     |
+|  |  - VPA               |      - mode: Off/Initial/Auto          |
+|  |  - Cluster Autoscaler|  - CA (nodes, reacts to pending/rs)   |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  CA -> cloud provider API: scale node group up/down             |
+|  VPA -> vertical pod req/limit (NOT compatible with HPA on CPU) |
+|  (use custom/external metrics for CPU+memory with HPA + VPA)     |
++------------------------------------------------------------------+
+
+# PDB, Node Drain & Velero DR
++------------------------------------------------------------------+
+|        PDB DRAINING & VELERO BACKUP/RESTORE (DR)                  |
+|                                                                  |
+|  PDB (PodDisruptionBudget):                                      |
+|  +----------------------------------------------------------+    |
+|  |  apiVersion: policy/v1                                   |    |
+|  |  kind: PodDisruptionBudget                               |    |
+|  |  metadata:                                              |    |
+|  |  name: api-pdb                                          |    |
+|  |  spec:                                                   |
+|  |  minAvailable: 2  OR  maxUnavailable: 1               |
+|  |  selector: matchLabels: app=api                       |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  kubectl drain node-1 --ignore-daemonsets                       |
+|   -> evicts Pods (respects PDB) -> cordons node                  |
+|                                                                  |
+|  VELERO BACKUP:                                                  |
+|  +----------------------------------------------------------+    |
+|  |  velero schedule (CronJob) every 1h                 |    |
+|  |  velero backup create --ttl 720h --snapshot-locations  |    |
+|  |    -> Object Store (S3/GCS)                            |    |
+|  |    -> Volume Snapshots (CSI) for PVCs                  |    |
+|  |  BackupStorageLocation + VolumeSnapshotLocation       |    |
+|  +----------------------------------------------------------+    |
+|        |                                                         |
+|        |  objects persisted in etcd                             |
+|        v                                                         |
+|  +--------------------------+   +-------------------------------+ |
+|  |  OBJECT STORE (Backup)   |   |  SNAPSHOT STORE (PVCs)       | |
+|  |  S3/GCS/Azure            |   |  CSI snapshotting              | |
+|  |  - k8s resources (JSON) |   |  - PV volume content          | |
+|  +--------------------------+   +-------------------------------+ |
+|                                                                  |
+|  VELERO RESTORE:                                                 |
+|  +----------------------------------------------------------+    |
+|  |  velero restore create <backup>                     |    |
+|  |  -> re-apply objects (preserves NS/ownerRefs)        |    |
+|  |  -> PVCs restored from snapshots (if Restic used) |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  DISASTER RECOVERY PATH:                                         |
+|  Primary cluster failure -> restore to new cluster from S3      |
+|  Restore partial (label selectors, ns includes/excludes)        |
+|  RestoreOrder via ownerReferences (topological sort)            |
++------------------------------------------------------------------+
+
+# Progressive Delivery (Canary via Argo Rollouts)
++------------------------------------------------------------------+
+|        PROGRESSIVE DELIVERY: ARGO ROLLOUTS CANARY                 |
+|                                                                  |
+|  Rollout (drop-in Replacement for Deployment):                   |
+|  +----------------------------------------------------------+    |
+|  |  apiVersion: argoproj.io/v1alpha1                     |    |
+|  |  kind: Rollout                                          |    |
+|  |  spec:                                                  |    |
+|  |  replicas: 4                                            |    |
+|  |  strategy:                                            |    |
+|  |  canary:                                               |
+|  |  steps:                                                  |
+|  |  - setWeight: 25                                     |    |
+|  |  - pause: {duration: 30s}                           |    |
+|  |  - setWeight: 50                                     |    |
+|  |  - analysis: {templates:[success-rate]}             |    |
+|  |  - setWeight: 100                                    |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  ANALYSIS (Prometheus metric query):                             |
+|  success-rate = sum(rate(http_requests_total{code!~"5.."}[5m]))  |
+|                / sum(rate(http_requests_total[5m]))               |
+|  if < 0.95 -> abort, rollback; if >= for N min-success -> advance|
+|                                                                  |
+|  TRAFFIC ROUTING (service mesh / ingress):                       |
+|  - ALB Ingress (weighted target groups)                        |
+|  - Istio VirtualService (http.route.weight)                     |
+|  - Linkerd, NGINX, Service Mesh Interface                      |
++------------------------------------------------------------------+

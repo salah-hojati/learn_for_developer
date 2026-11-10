@@ -1,0 +1,205 @@
+# Module 05: Storage - PVC, StorageClass, CSI, PV, Volume Modes, Reclaim Policies
+# Lesson: 19
+
+# PVC -> StorageClass -> CSI Provisioner -> PV -> Pod Binding
++------------------------------------------------------------------+
+|           DYNAMIC PROVISIONING: PVC -> SC -> CSI -> PV -> POD    |
+|                                                                  |
+|  1. USER CREATES PVC                                             |
+|  +----------------------------------------------------------+    |
+|  | kind: PersistentVolumeClaim                              |    |
+|  | metadata: {name: my-pvc, namespace: default}             |    |
+|  | spec:                                                    |    |
+|  |   accessModes: [ReadWriteOnce]                           |    |
+|  |   storageClassName: fast-ssd                             |    |
+|  |   resources: {requests: {storage: 10Gi}}                 |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  2. PVC CONTROLLER WATCHES NEW PVC                            |
+|  +----------------------------------------------------------+    |
+|  |  - Matches storageClassName: fast-ssd                    |    |
+|  |  - Finds StorageClass                                     |    |
+|  |  - Sets provisioner: pd.csi.storage.gke.io               |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  3. STORAGECLASS DEFINES PROVISIONER                          |
+|  +----------------------------------------------------------+    |
+|  | kind: StorageClass                                       |    |
+|  | metadata: {name: fast-ssd}                               |    |
+|  | provisioner: pd.csi.storage.gke.io                       |    |
+|  | parameters:                                              |    |
+|  |   type: pd-ssd                                           |    |
+|  | reclaimPolicy: Delete                                    |    |
+|  | volumeBindingMode: WaitForFirstConsumer                  |    |
+|  | allowVolumeExpansion: true                               |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  4. CSI EXTERNAL PROVISIONER (sidecar)                        |
+|  +----------------------------------------------------------+    |
+|  |  - Watches PVCs needing provisioning                     |    |
+|  |  - Calls CSI CreateVolume RPC to storage backend         |    |
+|  |  - Creates PV object with volumeHandle                   |    |
+|  |  - Binds PV to PVC                                        |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  5. CSI DRIVER (plugin) + STORAGE BACKEND                     |
+|  +----------------------------------------------------------+    |
+|  |  CSI DRIVER PODS:                                        |    |
+|  |  - csi-provisioner (external-provisioner)                |    |
+|  |  - csi-attacher (external-attacher)                      |    |
+|  |  - csi-resizer (external-resizer)                        |    |
+|  |  - csi-snapshotter (external-snapshotter)                |    |
+|  |  - node-driver-registrar (on each node)                  |    |
+|  |  - csi-driver (plugin implementation)                    |    |
+|  |                                                          |    |
+|  |  STORAGE BACKEND: AWS EBS, GCP PD, Azure Disk,           |    |
+|  |  Ceph, Portworx, Longhorn, Rook, local-path...           |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  6. PV CREATED & BOUND TO PVC                                 |
+|  +----------------------------------------------------------+    |
+|  | kind: PersistentVolume                                   |    |
+|  | metadata: {name: pvc-abc123...}                          |    |
+|  | spec:                                                    |    |
+|  |   capacity: {storage: 10Gi}                              |    |
+|  |   volumeMode: Filesystem                                 |    |
+|  |   accessModes: [ReadWriteOnce]                           |    |
+|  |   persistentVolumeReclaimPolicy: Delete                  |    |
+|  |   storageClassName: fast-ssd                             |    |
+|  |   csi:                                                   |    |
+|  |     driver: pd.csi.storage.gke.io                        |    |
+|  |     volumeHandle: projects/.../zones/.../disks/...       |    |
+|  |   claimRef: {name: my-pvc, namespace: default}           |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  7. POD USES PVC                                              |
+|  +----------------------------------------------------------+    |
+|  | kind: Pod                                                |    |
+|  | spec:                                                    |    |
+|  |   volumes:                                               |    |
+|  |   - name: data                                           |    |
+|  |     persistentVolumeClaim: {claimName: my-pvc}           |    |
+|  |   containers:                                            |    |
+|  |   - name: app                                            |    |
+|  |     volumeMounts:                                        |    |
+|  |     - name: data                                         |    |
+|  |       mountPath: /data                                   |    |
+|  +----------------------------------------------------------+    |
++------------------------------------------------------------------+
+
+# Volume Modes
++------------------------------------------------------------------+
+|                         VOLUME MODES                             |
+|                                                                  |
+|  +--------------------------+  +--------------------------+      |
+|  |  Filesystem (default)    |  |  Block                   |      |
+|  |                          |  |                          |      |
+|  |  - PV formatted with     |  |  - Raw block device      |      |
+|  |    fs (ext4, xfs, ntfs)  |  |    presented to Pod      |      |
+|  |  - Mounted at mountPath  |  |  - No filesystem layer   |      |
+|  |  - Kubernetes manages    |  |  - Pod sees /dev/xxx     |      |
+|  |    mount/format          |  |  - App manages FS/raw    |      |
+|  |                          |  |                          |      |
+|  |  PVC spec:               |  |  PVC spec:               |      |
+|  |  volumeMode: Filesystem  |  |  volumeMode: Block       |      |
+|  |                          |  |                          |      |
+|  |  Pod:                    |  |  Pod:                    |      |
+|  |  volumeMounts:           |  |  volumeDevices:          |      |
+|  |  - mountPath: /data      |  |  - name: data            |      |
+|  |                          |  |    devicePath: /dev/xvd  |      |
+|  +--------------------------+  +--------------------------+      |
+|                                                                  |
+|  USE CASES:                                                       |
+|  Filesystem: General apps, databases with FS, logs, content      |
+|  Block: Databases (raw), high-perf, custom FS, Oracle ASM        |
++------------------------------------------------------------------+
+
+# Reclaim Policies
++------------------------------------------------------------------+
+|                      RECLAIM POLICIES                            |
+|                                                                  |
+|  +--------------------------+  +--------------------------+      |
+|  |  Retain                  |  |  Delete (default)        |      |
+|  |                          |  |                          |      |
+|  |  - PV kept after PVC     |  |  - PV deleted when PVC   |      |
+|  |    deleted               |  |    deleted               |      |
+|  |  - Data persists on      |  |  - Storage backend       |      |
+|  |    storage backend       |  |    volume deleted        |      |
+|  |  - Manual cleanup needed |  |  - Auto cleanup          |      |
+|  |  - Admin recovers data   |  |  - No data recovery      |      |
+|  |                          |  |                          |      |
+|  |  Use: Critical data,     |  |  Use: Ephemeral, dev,    |      |
+|  |  compliance, backup      |  |  stateless workloads     |      |
+|  +--------------------------+  +--------------------------+      |
+|                                                                  |
+|  +--------------------------+                                    |
+|  |  Recycle (deprecated)    |                                    |
+|  |                          |                                    |
+|  |  - Basic scrub (rm -rf)  |                                    |
+|  |  - PV made available     |                                    |
+|  |  - Only for NFS/hostPath |                                    |
+|  |  - Replaced by dynamic   |                                    |
+|  |    provisioning          |                                    |
+|  +--------------------------+                                    |
+|                                                                  |
+|  PV LIFECYCLE:                                                   |
+|  Provisioning -> Binding -> Using -> Released -> Reclaiming     |
+|                                                                  |
+|  RECLAIM FLOW (Retain):                                          |
+|  1. PVC deleted                                                  |
+|  2. PV status -> Released                                        |
+|  3. PV remains, claimRef cleared                                 |
+|  4. Admin manually deletes PV or reuses                          |
+|                                                                  |
+|  RECLAIM FLOW (Delete):                                          |
+|  1. PVC deleted                                                  |
+|  2. PV status -> Released                                        |
+|  3. Provisioner deletes backend volume                           |
+|  4. PV object deleted                                            |
++------------------------------------------------------------------+
+
+# CSI Architecture
++------------------------------------------------------------------+
+|                       CSI ARCHITECTURE                           |
+|                                                                  |
+|  KUBERNETES SIDE                          STORAGE VENDOR SIDE    |
+|  +------------------------+             +------------------------+ |
+|  |  EXTERNAL COMPONENTS   |             |     CSI DRIVER         | |
+|  |  (deployed by vendor)  |             |   (vendor provides)    | |
+|  |                        |             |                        | |
+|  | +------------------+   |   gRPC      | +------------------+   | |
+|  | | external-        |<--+----------->| | CSI Controller   |   | |
+|  | | provisioner      |   |  CSI Spec   | | Plugin           |   | |
+|  | +------------------+   |             | | - CreateVolume   |   | |
+|  | +------------------+   |             | | - DeleteVolume   |   | |
+|  | | external-attacher|<--+             | | - ControllerPub  |   | |
+|  | +------------------+   |             | | - ControllerUnpub|   | |
+|  | +------------------+   |             | | - ValidateVol    |   | |
+|  | | external-resizer |<--+             | | - ListVolumes    |   | |
+|  | +------------------+   |             | | - GetCapacity    |   | |
+|  | +------------------+   |             | +------------------+   | |
+|  | | external-        |   |             | +------------------+   | |
+|  | | snapshotter      |<--+             | | CSI Node Plugin  |   | |
+|  | +------------------+   |             | | (runs on each    |   | |
+|  |                        |             | |  worker node)    |   | |
+|  |                        |             | | - NodeStageVol   |   | |
+|  |  NODE COMPONENTS       |             | | - NodePublishVol |   | |
+|  |  (on each node)        |             | | - NodeUnpublish  |   | |
+|  | +------------------+   |             | | - NodeExpandVol  |   | |
+|  | | node-driver-     |<--+------------>| | - NodeGetInfo    |   | |
+|  | | registrar        |   |  CSI Spec   | +------------------+   | |
+|  | +------------------+   |             |                        | |
+|  | | kubelet          |   |             |                        | |
+|  | | (volume mgr)     |   |             |                        | |
+|  | +------------------+   |             +------------------------+ |
+|  +------------------------+                                        |
+|                                                                  |
+|  CSI SPEC VERSIONS: v1.0, v1.1, v1.2, v1.3, v1.4, v1.5, v1.6,  |
+|  v1.7, v1.8 (latest as of 2026)                                  |
++------------------------------------------------------------------+

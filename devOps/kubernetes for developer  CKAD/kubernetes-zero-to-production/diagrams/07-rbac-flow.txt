@@ -1,0 +1,139 @@
+# Module 07 | Covers: User/SA -> Role/ClusterRole -> RoleBinding/ClusterRoleBinding -> verbs/subresources, PSA tiers, admission mutation/validation order
+# Lessons: 22-23
+
+# RBAC Authorization Flow (token -> API call)
++------------------------------------------------------------------+
+|                  RBAC AUTHORIZATION FLOW                          |
+|                                                                  |
+|  Request: user "alice" issues:                                  |
+|    $ kubectl get pods -n prod --as=system:serviceaccount:...    |
+|                                                                  |
+|  +------------------+                                            |
+|  |  1. AUTHENTICATION |                                        |
+|  |  - x509 client cert |  (CN=alice, O=dev-team)                |
+|  |  - service account |  token (BoundSA, projected volume)        |
+|  |  - OIDC / webhook  |                                        |
+|  |  - anonymous proxy|                                        |
+|  |  => Identity: User:alice  Groups:dev-team                      |
+|  +------------------+                                            |
+|        |                                                        |
+|        v                                                        |
+|  +------------------+                                            |
+|  |  2. AUTHORIZATION  |  (RBAC ABACWebhook Node)                 |
+|  |  (mode=RBAC)       |                                        |
+|  |  Build AccessReview|                                        |
+|  |  {verb:get resource:pods|                                  |
+|  |   namespace:prod name:*} |                                  |
+|  |  Match subjects in:                                          |
+|  |    - RoleBinding + Role (namespace-scoped, in prod)          |
+|  |    - ClusterRoleBinding + ClusterRole (cluster-wide)         |
+|  +------------------+                                            |
+|        |                                                        |
+|        v                                                        |
+|  +------------------+                                            |
+|  |  3. ACCESS DECISION|                                        |
+|  |  Subjects: [User:alice, Group:dev-team, SA:...]             |
+|  |  Role.rules:                                               |
+|  |  - apiGroups:[""] resources:[pods] verbs:[get,list,watch]   |
+|  |  - apiGroups:["apps"] resources:[deployments]|---------------|
+|  |    verbs:[get]                                          |
+|  |  - nonResourceURLs:/metrics verbs:get                      |
+|  |  => ALLOW or DENY                                            |
+|  +------------------+                                            |
+|        |                                                        |
+|        v                                                        |
+|  +------------------+                                            |
+|  |  4. ADMISSION + WRITE |  -> etcd (with audit)               |
+|  +------------------+                                            |
++------------------------------------------------------------------+
+
+# RBAC Objects: Scope & Binding Matrix
++------------------------------------------------------------------+
+|        RBAC OBJECTS: SCOPE & BINDING MATRIX                      |
+|                                                                  |
+|  CLUSTER SCOPE                          NAMESPACE SCOPE          |
+|  +------------------+                 +------------------+      |
+|  |  ClusterRole     |                 |  Role             |      |
+|  |  - all namespaces|                 |  - single ns only|      |
+|  |  - nonResourceURL |                 |                  |      |
+|  |  - resourceNames  |                 |  - resourceNames|      |
+|  +------------------+                 +------------------+      |
+|        |                                     |                  |
+|        | ClusterRoleBinding                   | RoleBinding     |
+|        v                                     v                  |
+|  +------------------+                 +------------------+      |
+|  |  Subject:        |                 |  Subject:        |      |
+|  |  User / Group /  |                 |  User / Group /  |      |
+|  |  ServiceAccount  |                 |  ServiceAccount  |      |
+|  | -> ClusterRole   |                 | -> Role          |      |
+|  +------------------+                 +------------------+      |
+|                                                                  |
+|  SUBRESOURCES & CUSTOM:                                          |
+|  - resources: ["pods","pods/attach","pods/exec","pods/proxy"]   |
+|  - verbs: [*] (wildcard) or [get,create,update,patch,delete]     |
+|  - apiGroups: ["", "apps", "batch", "networking.k8s.io"]         |
+|  - resourceNames: restrict to named instances                    |
+|                                                                  |
+|  DEFAULT CLUSTERROLES:                                           |
+|  cluster-admin (full) -> admin (ns full) -> edit -> view         |
++------------------------------------------------------------------+
+
+# Admission Order: Mutating vs Validating
++------------------------------------------------------------------+
+|        ADMISSION CONTROL PIPELINE: MUTATE -> VALIDATE              |
+|                                                                  |
+|  Request enters API server -> AdmissionReview chain:              |
+|                                                                  |
+|  MUTATING (modify request, can add/patch fields):                  |
+|    1. Namespace lifecycle (default namespace)                     |
+|    2. ServiceAccount (inject default SA + projected token)       |
+|    3. PodSecurity (mutate podSpec to satisfy PSA tier)            |
+|    4. MutatingAdmissionWebhook (custom, ordered by clientConfig) |
+|    5. PodResource (defaultLimitRange via LimitRange admission)    |
+|    6. RuntimeClass, Tolerations, NodeAffinity defaulters          |
+|                                                                  |
+|  VALIDATING (decide accept/reject, cannot mutate):                |
+|    1. Namespace lifecycle (no delete of terminating ns)            |
+|    2. ValidatingAdmissionWebhook (custom, ordered)                |
+|    3. PodSecurity (validate podSpec vs PSA tier)                 |
+|    4. ResourceQuota (check requests/limits fit remaining quota) |
+|    5. PodSecurityPolicy/Policy validations (PodSecurity Policy   |
+|       removed in 1.25+, replaced by PSA)                          |
+|    6. NodeResources, ImagePolicyWebhook, etc.                    |
+|    7. Namespace default selector checks                          |
+|                                                                  |
+|  -> Persist to etcd -> broadcast to watchers                      |
+|  Mutations in mutating phase are visible to validating phase.    |
++------------------------------------------------------------------+
+
+# PodSecurity Standards (PSA) Tiers
++------------------------------------------------------------------+
+|        PODSECURITY STANDARDS TIERS                                |
+|                                                                  |
+|  Namespace labels (per level: privileged|baseline|restricted):  |
+|  pod-security.kubernetes.io/enforce: baseline                  |
+|  pod-security.kubernetes.io/warn: restricted                  |
+|  pod-security.kubernetes.io/audit: restricted                  |
+|  pod-security.kubernetes.io/enforce-version: v1.25            |
+|                                                                  |
+|  +------------------+  +------------------+  +----------------+ |
+|  |  PRIVILEGED      |  |  BASELINE        |  |  RESTRICTED  | |
+|  |  (least strict)  |  |  (moderate)      |  |  (strictest)| |
+|  |                  |  |                  |  |            | |
+|  | - allowed all   |  | - no hostNS      |  | - runAsNonRoot| |
+|  | - hostPath       |  | - no privilege   |  |   :true       | |
+|  | - hostPID/IPC    |  | - secp: Runtime- |  | - runAsUser  | |
+|  | - all caps      |  |   Default rec.   |  |   non-root    | |
+|  | - host network   |  | - readOnlyRootFS |  | - secp:      | |
+|  |                  |  |                  |  |   RuntimeDef. | |
+|  | use: infra, CNI |  | - non-root rec.  |  | - drop ALL   | |
+|  +------------------+  | - drop ALL cap.  |  |   caps        | |
+|                        |                  |  | - no host*    | |
+|  +------------------+  | - no hostPaths   |  +----------------+ |
+|  | use: apps, infra|  |                  |                    | |
+|  +------------------+  | use: prod apps  |                    | |
+|                        +------------------+  +------------------+ |
+|                                                                  |
+|  EXEMPTIONS: users/groups/runtimeclasses via                  |
+|  pod-security.kubernetes.io/emergency: <name>                   |
++------------------------------------------------------------------+

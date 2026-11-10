@@ -1,0 +1,131 @@
+# Module 02 | Covers: Scheduler filtering, node affinity, taints/tolerations, scoring, priority/preemption, PodTopologySpread
+# Lessons: 3-5
+
+# Scheduler Pipeline
++------------------------------------------------------------------+
+|                       SCHEDULER PIPELINE                         |
+|                                                                  |
+|  UNSCHEDULED PODS (nominatedNodeName empty)                      |
+|  +------------------+                                            |
+|  |  PENDING Pod     |                                            |
+|  |  cpu=500m,mem=1Gi|                                            |
+|  |  nodeSelector:   |                                            |
+|  |  region=west     |                                            |
+|  |  affinity:       |                                            |
+|  |  - podAntiAf...  |                                            |
+|  |  tolerations:    |                                            |
+|  |  - key:dedicated|                                            |
+|  +------------------+                                            |
+|        |                                                        |
+|        |  1. FILTERING (feasible nodes)                          |
+|        v                                                        |
+|  +------------------+                                            |
+|  |   NODE LIST      |                                            |
+|  |  node-a node-b   |                                            |
+|  |  node-c node-d   |                                            |
+|  +------------------+                                            |
+|        |  for each node: check predicates                        |
+|        v                                                        |
+|  +------------------+  +------------------+                       |
+|  | Node Affinity    |  | Taints/Tolerations |                     |
+|  | requiredDuring   |  | Pod tolerations   |                     |
+|  | Scheduling  :    |  | must match node   |                     |
+|  |  matchLabels     |  | taints (key,val,  |                     |
+|  |  - region=west   |  | effect) else skip |                     |
+|  |  OR          :   |  | effect: NoSchedule|                     |
+|  |  matchExpressions|  | effect: NoExecute |                     |
+|  +------------------+  +------------------+                       |
+|        |                  |                                       |
+|        | nodeSelector    | taints/tolerations are BOTH            |
+|        v                  v  required (AND within pod)           |
+|  +------------------+  +------------------+                       |
+|  | Nodes passing    |  | Nodes not tainted|                     |
+|  | all hard rules   |  | or tolerated    |                     |
+|  +------------------+  +------------------+                       |
+|        |                  |                                       |
+|        +------------------+                                       |
+|        |  2. Scoring (perpendicular scoring)                    |
+|        v                                                        |
+|  +------------------+                                            |
+|  |  SCORE each node  |                                           |
+|  | - Preferred node  |  (soft node affinity, taints,            |
+|  |   affinity weights)|  topology spread, image locality        |
+|  +------------------+                                            |
+|        |                                                        |
+|        |  3. Pick highest score (tie-break: random)              |
+|        v                                                        |
+|  +------------------+                                            |
+|  |  BIND Pod to node|                                            |
+|  |  (API: bind)     |                                            |
++--------------------------+----------------------------------------+
+|        |                                                        |
+|        |  PodTopologySpread: spread across topologyKeys          |
+|        v                                                        |
+|  +------------------+                                            |
+|  |  node-a:2 pods  |   <- spread constraint: maxSkew=1         |
+|  |  node-b:2 pods  |   on key: kubernetes.io/hostname            |
+|  |  node-c:1 pod   |   whenUnsatisfiable: DoNotSchedule          |
+|  +------------------+                                            |
++------------------------------------------------------------------+
+
+# Pod Priority & Preemption
++------------------------------------------------------------------+
+|              POD PRIORITY CLASSES & PREEMPTION                    |
+|                                                                  |
+|  PRIORITY CLASS -> numeric value (higher = more important)       |
+|                                                                  |
+|  +----------------------+  +----------------------+              |
+|  |  system-cluster-     |  |  system-node-         |              |
+|  |  critical (2000000)  |  |  critical (2000000)  |              |
+|  |  (kube-apiserver,   |  |  (kubelet, kube-    |              |
+|  |   etcd, coredns)    |  |   proxy, etc)       |              |
+|  +----------------------+  +----------------------+              |
+|  |  custom-highest      |  value: 1000000        |              |
+|  |  (preempts batch)     |                      |              |
+|  +----------------------+  +----------------------+              |
+|  |  custom-high         |  value: 1000            |              |
+|  |                      |                      |              |
+|  +----------------------+  +----------------------+              |
+|  |  custom-default      |  value: 100              |              |
+|  |  (default class)      |                      |              |
+|  +----------------------+  +----------------------+              |
+|  |  custom-low          |  value: 10               |              |
+|  |  (batch preemtee)     |                      |              |
+|  +----------------------+  +----------------------+              |
+|  |  best-effort         |  value: 0 (no class)     |              |
+|  |  (lowest, preemptee)  |                      |              |
+|  +----------------------+  +----------------------+              |
+|                                                                  |
+|  PREEMPTION FLOW:                                                |
+|  1. High-priority pod unschedulable  -> nominate victim node    |
+|  2. Scheduler finds lower-priority pods on that node            |
+|  3. Kills victim(s) until node fits new pod (resources)         |
+|  4. Pod enters grace period (preStop hook fires)                |
+|  5. Preemption respects PDB (does not break minAvailable)       |
+|                                                                  |
+|  NON-PREEMPTING vs PREEMPTING classes:                           |
+|  - preemptionPolicy: NonPreempting  -> pod sits in queue         |
+|  - preemptionPolicy: PreemptLowerPriority (default)             |
++------------------------------------------------------------------+
+
+# Scheduler Extensibility
++------------------------------------------------------------------+
+|            SCHEDULER EXTENSIBILITY (Framework)                    |
+|                                                                  |
+|  +--------------------------+   +--------------------------+      |
+|  |  EXTENSION POINTS        |   |  FILTER / SCORE PLUGINS  |      |
+|  |                          |   |                          |      |
+|  |  Queue (Backoff)         |   |  - NodeResourcesFit       |      |
+|  |   Enqueue ->  |   |  - NodeResourcesLeast     |      |
+|  |  Filter       |   |   |  |  - ImageLocality          |      |
+|  |  Score        |   |   |  |  - TaintToleration        |      |
+|  |  Reserve      |   |   |  |  - NodeAffinity           |      |
+|  |  Permit       |   |   |  |  - PodTopologySpread      |      |
+|  |  PreBind      |   |   |  +--------------------------+      |
+|  |  Bind         |   |   |                                  |
+|  |  Unreserve     |   |   |                                     |
+|  +--------------------------+                                  |
+|                                                                  |
+|  Permit plugin can hold pods (e.g. scheduling gates /          |
+|  custom queueing)                                               |
++------------------------------------------------------------------+

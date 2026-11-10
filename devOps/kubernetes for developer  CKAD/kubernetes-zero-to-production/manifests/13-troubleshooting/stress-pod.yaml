@@ -1,0 +1,22 @@
+# Module: 13 Troubleshooting | Lesson: 42
+# An example Pod demonstrating resource constraints that trigger OOMKilled or eviction.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: stress-test
+spec:
+  containers:
+  - name: stress
+    image: polinux/stress-ng
+    command: ["stress-ng", "--vm", "1", "--vm-bytes", "512M", "--oomable"]
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+    readinessProbe:
+      exec:
+        command: ["cat", "/tmp/ready"]
+      initialDelaySeconds: 10
+      periodSeconds: 5

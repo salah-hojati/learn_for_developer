@@ -1,0 +1,31 @@
+# Module: 08 Observability | Lesson: 26
+# A Pod with all four probe types: startup, liveness, readiness (separate paths).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-probes
+  labels:
+    app: app-with-probes
+spec:
+  containers:
+  - name: api
+    image: nginx:1.25-alpine
+    ports:
+    - containerPort: 80
+    startupProbe:
+      httpGet:
+        path: /startup
+        port: 80
+      failureThreshold: 30
+      periodSeconds: 10
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 80
+      initialDelaySeconds: 15
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 80
+      periodSeconds: 5

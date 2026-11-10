@@ -1,0 +1,264 @@
+# Module 08: Observability - Prometheus, Loki, Probes
+# Lessons: 24-28
+
+# Prometheus Scrape -> TSDB -> Alertmanager
++------------------------------------------------------------------+
+|                   PROMETHEUS SCRAPE -> TSDB -> ALERTMANAGER      |
+|                                                                  |
+|  SERVICE DISCOVERY & SCRAPE:                                     |
+|  +----------------------------------------------------------+    |
+|  |  PROMETHEUS SERVER                                       |    |
+|  |                                                          |    |
+|  |  1. SERVICE DISCOVERY (SD)                               |    |
+|  |     - kubernetes_sd_configs:                             |    |
+|  |         - role: pod / service / endpoints / node        |    |
+|  |     - Relabeling: __meta_kubernetes_* -> labels         |    |
+|  |                                                          |    |
+|  |  2. SCRAPE LOOP (per target, default 30s)                |    |
+|  |     - HTTP GET /metrics                                  |    |
+|  |     - Timeout: 10s                                       |    |
+|  |     - Sample limit                                       |    |
+|  |                                                          |    |
+|  |  3. STORAGE (TSDB)                                       |    |
+|  |     - Head block (in-memory, ~2h)                        |    |
+|  |     - Persistent blocks (compressed, mmapped)            |    |
+|  |     - WAL (write-ahead log)                              |    |
+|  |     - Retention: time (15d) / size (50GB)                |    |
+|  |                                                          |    |
+|  |  4. RULE EVALUATION                                      |    |
+|  |     - Recording rules (precompute)                       |    |
+|  |     - Alerting rules -> Alertmanager                     |    |
+|  +---------------------------+------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  +----------------------------------------------------------+    |
+|  |  TARGET EXPORTERS                                        |    |
+|  |                                                          |    |
+|  |  +------------------+  +------------------+              |    |
+|  |  | node-exporter    |  | kube-state-metrics|              |    |
+|  |  | (DaemonSet)      |  | (Deployment)      |              |    |
+|  |  |                  |  |                  |              |    |
+|  |  | - CPU, mem, disk |  | - Deployment     |              |    |
+|  |  | - net, fs, hwmon |  |   replicas       |              |    |
+|  |  | - systemd,       |  | - Pod status     |              |    |
+|  |  |   textfile       |  | - Service eps    |              |    |
+|  |  | - port 9100      |  | - PVC/PV status  |              |    |
+|  |  |                  |  | - Node cond.     |              |    |
+|  |  |                  |  | - port 8080      |              |    |
+|  |  +------------------+  +------------------+              |    |
+|  |                                                          |    |
+|  |  +------------------+                                    |    |
+|  |  | cAdvisor         |  (built into kubelet)             |    |
+|  |  | - Container CPU  |  - /metrics/cadvisor               |    |
+|  |  | - Container mem  |  - Per-container metrics          |    |
+|  |  | - Container net  |                                    |    |
+|  |  | - Container fs   |                                    |    |
+|  |  +------------------+                                    |    |
+|  |                                                          |    |
+|  |  +------------------+                                    |    |
+|  |  | APP METRICS      |  (Prometheus client libs)         |    |
+|  |  | - /metrics       |  - Go, Java, Python, Node.js      |    |
+|  |  | - Custom biz     |  - Histograms, summaries          |    |
+|  |  |   metrics        |                                    |    |
+|  |  +------------------+                                    |    |
+|  +----------------------------------------------------------+    |
+|                              |                                 |
+|                              v                                 |
+|  +----------------------------------------------------------+    |
+|  |  ALERTMANAGER                                            |    |
+|  |                                                          |    |
+|  |  - Receives alerts from Prometheus                       |    |
+|  |  - Grouping (group_by)                                   |    |
+|  |  - Inhibition (silence related)                          |    |
+|  |  - Silencing (manual mute)                               |    |
+|  |  - Deduplication                                         |    |
+|  |  - Receivers: email, Slack, PagerDuty, webhook, OpsGenie|    |
+|  |  - HA mode (gossip mesh)                                 |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  QUERY PATH:                                                     |
+|  PromQL -> Prometheus Engine -> TSDB -> Results                 |
+|  Grafana / Console -> Prometheus API -> Query Engine            |
++------------------------------------------------------------------+
+
+# Loki: Promtail -> Loki -> Grafana
++------------------------------------------------------------------+
+|                      LOKI LOG AGGREGATION                        |
+|                                                                  |
+|  LOG FLOW:                                                       |
+|                                                                  |
+|  +--------------------------+                                    |
+|  |      APPLICATION PODS    |                                    |
+|  |                          |                                    |
+|  |  stdout/stderr ->        |                                    |
+|  |  /var/log/pods/...       |                                    |
+|  |  /var/log/containers/... |                                    |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              |  Tail log files                                  |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |      PROMTAIL (DaemonSet)|                                    |
+|  |                          |                                    |
+|  |  - Discovers Pod logs    |                                    |
+|  |    via kubernetes_sd     |                                    |
+|  |  - Labels:               |                                    |
+|  |    {namespace, pod,      |                                    |
+|    container, app}         |                                    |
+|  |  - Pipeline stages:      |                                    |
+|  |    - regex/JSON parse    |                                    |
+|  |    - label extraction    |                                    |
+|  |    - timestamp parse     |                                    |
+|  |    - multiline handling  |                                    |
+|  |  - Batches & compresses  |                                    |
+|  |  - Pushes to Loki        |                                    |
+|  |    (HTTP/gRPC, port 3100)|                                    |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              |  HTTP POST /loki/api/v1/push                      |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |         LOKI             |                                    |
+|  |  (Distributed:           |                                    |
+|  |   ingester, querier,     |                                    |
+|  |   query-frontend,        |                                    |
+|  |   compactor,             |                                    |
+|  |   distributor,           |                                    |
+|  |   ruler)                 |                                    |
+|  |                          |                                    |
+|  |  - Index: Labels only    |                                    |
+|  |    (TSDB, chunked)       |                                    |
+|  |  - Chunks: Compressed    |                                    |
+|  |    log lines (gzip)      |                                    |
+|  |  - Storage: S3/GCS/      |                                    |
+|  |    filesystem            |                                    |
+|  |  - Retention: time/size  |                                    |
+|  +-----------+--------------+                                    |
+|              |                                                   |
+|              |  LogQL queries                                   |
+|              v                                                   |
+|  +--------------------------+                                    |
+|  |        GRAFANA           |                                    |
+|  |                          |                                    |
+|  |  - Data source: Loki     |                                    |
+|  |  - Explore: LogQL        |                                    |
+|  |    {app="myapp"} |= "error"                               |
+|  |  - Dashboards: Logs +    |                                    |
+|  |    Metrics correlation |                                    |
+|  |  - Alerting on logs      |                                    |
+|  +--------------------------+                                    |
+|                                                                  |
+|  KEY DIFFERENCE FROM ELK:                                        |
+|  - Loki indexes ONLY labels (not full text)                     |
+|  - Much smaller index, cheaper storage                          |
+|  - Queries scan chunks (parallel, fast)                         |
+|  - Native Grafana integration                                   |
++------------------------------------------------------------------+
+
+# Probes: Startup / Readiness / Liveness
++------------------------------------------------------------------+
+|                    PROBES: STARTUP / READINESS / LIVENESS        |
+|                                                                  |
+|  PROBE TYPES:                                                    |
+|  +--------------------------+  +--------------------------+      |
+|  |  HTTP GET                |  |  TCP Socket              |      |
+|  |  GET /healthz HTTP/1.1   |  |  Dial tcp:8080           |      |
+|  |  Host: pod-ip            |  |  Success = open        |      |
+|  |  Success: 2xx/3xx        |  |                        |      |
+|  +--------------------------+  +--------------------------+      |
+|  +--------------------------+  +--------------------------+      |
+|  |  gRPC                    |  |  Exec (command)          |      |
+|  |  grpc.health.v1.Health/  |  |  cat /tmp/healthy        |      |
+|  |  Check                   |  |  Exit 0 = success       |      |
+|  |  Status: SERVING         |  |                        |      |
+|  +--------------------------+  +--------------------------+      |
+|                                                                  |
+|  PROBE FIELDS:                                                   |
+|  +--------------------------+  +--------------------------+      |
+|  |  initialDelaySeconds: 5  |  |  periodSeconds: 10       |      |
+|  |  (first probe after      |  |  (interval)              |      |
+|  |   container start)       |  |                          |      |
+|  |  timeoutSeconds: 1       |  |  successThreshold: 1     |      |
+|  |  (per probe timeout)     |  |  (consecutive successes) |      |
+|  |  failureThreshold: 3     |  |  failureThreshold: 3     |      |
+|  |  (consecutive failures)  |  |  (consecutive failures)  |      |
+|  |  terminationGracePeriod  |  |                          |      |
+|  |  (SIGTERM wait)          |  |                          |      |
+|  +--------------------------+  +--------------------------+      |
+|                                                                  |
+|  STARTUP PROBE:                                                  |
+|  - Runs BEFORE readiness/liveness                                |
+|  - For slow-starting apps (Java, DB migration)                  |
+|  - failureThreshold * periodSeconds = max startup time          |
+|  - If fails: container killed (restartPolicy applies)           |
+|  - Disables liveness/readiness until success                    |
+|                                                                  |
+|  READINESS PROBE:                                                |
+|  - Determines if Pod receives traffic                           |
+|  - Failure -> Pod removed from Service Endpoints                |
+|  - Success -> Pod added to Endpoints                            |
+|  - Use for: DB connections, cache warmup, dependencies          |
+|                                                                  |
+|  LIVENESS PROBE:                                                 |
+|  - Determines if container is alive                             |
+|  - Failure -> Container RESTARTED (restartPolicy)               |
+|  - Use for: Deadlock detection, stuck threads                   |
+|  - Avoid for: External dependency checks (use readiness)        |
+|                                                                  |
+|  INTERACTION:                                                    |
+|  1. Container starts                                            |
+|  2. Startup probe runs (if defined)                             |
+|  3. Startup succeeds -> Readiness/Liveness begin                |
+|  4. Readiness fails -> No traffic, but container lives          |
+|  5. Liveness fails -> Container restart                         |
+|                                                                  |
+|  COMMON MISTAKES:                                                |
+|  - Same endpoint for all probes                                 |
+|  - Liveness on /healthz that checks DB (cascading failure)      |
+|  - Too aggressive failureThreshold (flapping)                   |
+|  - No startup probe for slow apps                               |
++------------------------------------------------------------------+
+
+# Observability Stack Integration
++------------------------------------------------------------------+
+|                   OBSERVABILITY STACK INTEGRATION                |
+|                                                                  |
+|  +----------------------------------------------------------------+
+|  |                      GRAFANA (Visualization)                  |
+|  |  - Dashboards: Metrics (PromQL), Logs (LogQL), Traces        |
+|  |  - Alerting UI, Explore, Correlations                         |
+|  +----------------------------------------------------------------+
+|           |                    |                    |              |
+|           v                    v                    v              |
+|  +--------------+       +--------------+       +--------------+   |
+|  |  PROMETHEUS  |       |     LOKI     |       |   TEMPO/     |   |
+|  |  (Metrics)   |       |    (Logs)    |       |   JAEGER     |   |
+|  |              |       |              |       |  (Traces)    |   |
+|  | - TSDB       |       | - Label idx  |       | - TraceID    |   |
+|  | - PromQL     |       | - Chunks     |       | - SpanID     |   |
+|  | - Alerting   |       | - LogQL      |       | - W3C        |   |
+|  +--------------+       +--------------+       +--------------+   |
+|           |                    |                    |              |
+|           v                    v                    v              |
+|  +----------------------------------------------------------------+
+|  |                    NODE EXPORTERS (DaemonSets)                |
+|  |  - node-exporter (host metrics)                               |
+|  |  - kube-state-metrics (K8s object state)                     |
+|  |  - cAdvisor (container metrics, in kubelet)                  |
+|  |  - promtail (log tailing)                                    |
+|  |  - otel-collector (traces, optional)                         |
+|  +----------------------------------------------------------------+
+|           |                    |                    |              |
+|           v                    v                    v              |
+|  +----------------------------------------------------------------+
+|  |                    APPLICATION PODS                           |
+|  |  - /metrics (Prometheus client)                              |
+|  |  - stdout/stderr (structured JSON logs)                      |
+|  |  - OpenTelemetry SDK (traces)                                |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  CORRELATION:                                                    |
+|  - Exemplars: TraceID in metrics -> jump to trace               |
+|  - Labels: Same labels across metrics/logs/traces               |
+|  - Grafana: Unified explore, logs->metrics, metrics->traces     |
++------------------------------------------------------------------+

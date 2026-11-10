@@ -1,0 +1,149 @@
+# Module 03: Workloads - Pod Lifecycle, Deployments, StatefulSets, DaemonSets
+# Lessons: 6-12
+
+# Pod Lifecycle Phases
++------------------------------------------------------------------+
+|                         POD LIFECYCLE                            |
+|                                                                  |
+|    +--------+                                                    |
+|    | PENDING|  (Pod accepted, scheduling, image pull)            |
+|    +---+----+                                                    |
+|        |                                                        |
+|        |  Scheduled to node                                     |
+|        v                                                        |
+|    +--------+     +----------+     +-----------+                |
+|    |CONTAINER|---->| RUNNING  |---->|  SUCCEEDED| (all exit 0)  |
+|    | CREATING|     |  (Ready) |     +-----------+                |
+|    +---+----+     +----+-----+            ^                      |
+|        |          |    |                 |                      |
+|        |          |    | Crash/Exit      |                      |
+|        |          |    v                 |                      |
+|        |          | +----------+         |                      |
+|        |          | |  FAILED  |---------+                      |
+|        |          | | (non-zero|                                |
+|        |          | |  exit)   |                                |
+|        |          | +----------+                                |
+|        |          |    ^                                        |
+|        |          |    | OOMKilled / Error                      |
+|        |          |    |                                        |
+|        |          |    |                                        |
+|        |          |    v                                        |
+|        |          | +----------+                                |
+|        |          | | UNKNOWN  | (node comm lost)               |
+|        |          | +----------+                                |
+|        |          +-------+                                     |
+|        |                  |                                     |
+|        |   Termination    |                                     |
+|        |   (SIGTERM ->     |                                     |
+|        |    grace period ->|                                     |
+|        |    SIGKILL)       |                                     |
+|        v                  v                                     |
+|    +----------+                                                 |
+|    | TERMINATING| (preStop, finalizers, cleanup)               |
+|    +----------+                                                 |
++------------------------------------------------------------------+
+
+# Deployment Rollout (ReplicaSet Old/New)
++------------------------------------------------------------------+
+|                      DEPLOYMENT ROLLOUT                          |
+|                                                                  |
+|  DEPLOYMENT (replicas: 3, strategy: RollingUpdate)               |
+|         |                                                        |
+|         v                                                        |
+|  +--------------------------+    +--------------------------+   |
+|  |   REPLICASET v1 (OLD)    |    |   REPLICASET v2 (NEW)    |   |
+|  |  replicas: 3 -> 2 -> 1->0|    |  replicas: 0 -> 1 -> 2->3 |   |
+|  |                          |    |                          |   |
+|  |  Pod-A1  Pod-A2  Pod-A3  |    |  Pod-B1  Pod-B2  Pod-B3  |   |
+|  |  [Running] [Running] [R] |    |  [Pend] [Run]  [Run] [Run] |   |
+|  +--------------------------+    +--------------------------+   |
+|         ^                              ^                        |
+|         | maxSurge: 1                  | maxUnavailable: 1       |
+|         |                              |                        |
+|         +------------------------------+                        |
+|                            |                                     |
+|                            v                                     |
+|                   +----------------+                            |
+|                   |  SERVICE       | (selector matches both     |
+|                   |  (stable IP)   |  RS pods via labels)       |
+|                   +----------------+                            |
+|                                                                  |
+|  ROLLOUT COMMANDS:                                               |
+|  kubectl rollout status deployment/app                          |
+|  kubectl rollout history deployment/app                         |
+|  kubectl rollout undo deployment/app --to-revision=2            |
+|  kubectl rollout pause deployment/app                           |
+|  kubectl rollout resume deployment/app                          |
++------------------------------------------------------------------+
+
+# StatefulSet Ordinal Identity
++------------------------------------------------------------------+
+|                    STATEFULSET ORDINAL IDENTITY                  |
+|                                                                  |
+|  STATEFULSET: web (replicas: 3, serviceName: nginx)              |
+|                                                                  |
+|  +----------+     +----------+     +----------+                 |
+|  | web-0    |     | web-1    |     | web-2    |                 |
+|  | (ordinal |     | (ordinal |     | (ordinal |                 |
+|  |   0)     |     |   1)     |     |   2)     |                 |
+|  |          |     |          |     |          |                 |
+|  | DNS:     |     | DNS:     |     | DNS:     |                 |
+|  | web-0.nginx|    | web-1.nginx|   | web-2.nginx|               |
+|  |          |     |          |     |          |                 |
+|  | PVC:     |     | PVC:     |     | PVC:     |                 |
+|  | data-web-0|    | data-web-1|   | data-web-2|                |
+|  +----------+     +----------+     +----------+                 |
+|        |               |               |                        |
+|        |  Ordered      |  Ordered      |                        |
+|        |  Deployment   |  Scaling      |                        |
+|        |  (0->1->2)   |  (0,1->2)     |                        |
+|        v               v               v                        |
+|  +----------------------------------------------------------------+
+|  |  VOLUME CLAIM TEMPLATE (PVC per Pod, persistent identity)    |
+|  |  volumeClaimTemplates:                                       |
+|  |  - metadata: {name: data}                                    |
+|  |    spec: {accessModes: [ReadWriteOnce], resources: {...}}   |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  KEY PROPERTIES:                                                 |
+|  - Stable network identity (ordinal-based DNS)                  |
+|  - Stable storage (PVC bound to specific ordinal)               |
+|  - Ordered deployment/scaling/deletion                          |
+|  - Rolling updates respect ordinal order                        |
++------------------------------------------------------------------+
+
+# DaemonSet Node Mapping
++------------------------------------------------------------------+
+|                      DAEMONSET NODE MAPPING                      |
+|                                                                  |
+|  DAEMONSET: node-exporter (runs on ALL matching nodes)           |
+|                                                                  |
+|  CLUSTER NODES:                                                  |
+|  +----------+  +----------+  +----------+  +----------+         |
+|  | node-1   |  | node-2   |  | node-3   |  | node-4   |         |
+|  | (linux)  |  | (linux)  |  | (windows)|  | (linux)  |         |
+|  |          |  |          |  |          |  | (tainted)|         |
+|  | Pod:     |  | Pod:     |  | (no Pod) |  | Pod:     |         |
+|  | node-exp |  | node-exp |  |          |  | node-exp |         |
+|  | (Running)|  | (Running)|  |          |  | (Running)|         |
+|  +----------+  +----------+  +----------+  +----------+         |
+|       |            |                 |            |             |
+|       | nodeSelector:          tolerations:           |         |
+|       | kubernetes.io/os=linux  key: "gpu"            |         |
+|       |                     operator: "Exists"         |         |
+|       |                     effect: "NoSchedule"       |         |
+|       v            v                 v            v         |
+|  +-----------------------------------------------------------------+
+|  |  DAEMONSET CONTROLLER                                           |
+|  |  - Creates Pod on each matching node                            |
+|  |  - Adds node affinity for nodeName                              |
+|  |  - Handles node addition/removal                                |
+|  |  - Respects taints/tolerations, nodeSelector, affinity          |
+|  +-----------------------------------------------------------------+
+|                                                                  |
+|  USE CASES:                                                      |
+|  - Log collectors (fluentd, filebeat)                            |
+|  - Monitoring agents (node-exporter, promtail)                   |
+|  - Network plugins (CNI daemons)                                 |
+|  - Storage drivers (CSI node plugins)                            |
++------------------------------------------------------------------+

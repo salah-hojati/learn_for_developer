@@ -1,0 +1,26 @@
+# Module: 04 Networking | Lesson: 16
+# A NetworkPolicy that restricts ingress to app Pods from a specific namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod-app
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-ingress
+  namespace: prod-app
+spec:
+  podSelector:
+    matchLabels:
+      app: prod-web
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8080

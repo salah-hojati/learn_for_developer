@@ -1,0 +1,32 @@
+# Module: 08 Observability | Lesson: 27
+# A ServiceMonitor that Prometheus scrapes to discover targets for an app Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  labels:
+    app: api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    name: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-monitor
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: api
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics

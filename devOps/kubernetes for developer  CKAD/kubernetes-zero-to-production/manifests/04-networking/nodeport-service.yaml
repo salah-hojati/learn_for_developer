@@ -1,0 +1,17 @@
+# Module: 04 Networking | Lesson: 17
+# A NodePort Service exposing an app on the static 30000-32767 range.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-nodeport
+  annotations:
+    # Optional: specify a cloud LB via service.beta.kubernetes.io
+spec:
+  type: NodePort
+  selector:
+    app: web
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30007
+  sessionAffinity: ClientIP

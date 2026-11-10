@@ -1,0 +1,18 @@
+# Module: 13 Troubleshooting | Lesson: 41
+# An emergency debug Pod with host access to diagnose networking or node issues.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-tool
+  namespace: default
+spec:
+  restartPolicy: Never
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  containers:
+  - name: debug
+    image: nicolaka/netshoot:ubuntu
+    command: ["sleep", "3600"]
+    securityContext:
+      capabilities:
+        add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]

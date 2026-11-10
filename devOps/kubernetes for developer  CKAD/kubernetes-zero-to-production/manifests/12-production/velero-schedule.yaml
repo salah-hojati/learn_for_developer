@@ -1,0 +1,28 @@
+# Module: 12 Production | Lesson: 38
+# Velero Schedule backing up a namespace every 6 hours with a one-week TTL.
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-backup
+  namespace: velero
+spec:
+  schedule: "0 */6 * * *"
+  template:
+    ttl: 168h0m0s
+    includedNamespaces:
+    - production
+    storageLocation: default
+    defaultVolumesToFsBackup: true
+---
+# Velero Backup object metadata references the CRDs installed by velero install.
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: manual-backup
+  namespace: velero
+  labels:
+    velero.io/storage-location: default
+spec:
+  includedNamespaces:
+  - app
+  defaultVolumesToFsBackup: true

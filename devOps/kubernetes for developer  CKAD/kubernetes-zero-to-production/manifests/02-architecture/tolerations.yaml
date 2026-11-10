@@ -1,0 +1,24 @@
+# Module: 02 Architecture | Lesson: 03
+# Taint + toleration pairing: the Pod tolerates the dedicated-node taint.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpu-workload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gpu-workload
+  template:
+    metadata:
+      labels:
+        app: gpu-workload
+    spec:
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+      containers:
+      - name: gpu
+        image: nvidia/cuda:12.0-base

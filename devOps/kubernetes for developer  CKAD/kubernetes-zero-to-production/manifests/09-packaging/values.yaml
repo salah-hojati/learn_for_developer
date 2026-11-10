@@ -1,0 +1,26 @@
+# Module: 09 Packaging | Lesson: 30
+# Default chart values. Overridden per environment with values files.
+replicaCount: 1
+image:
+  repository: nginx
+  tag: stable-alpine
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+ingress:
+  enabled: false
+  className: nginx
+  hosts:
+  - host: web.example.com
+    paths:
+    - path: /
+      pathType: Prefix
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
