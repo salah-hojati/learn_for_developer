@@ -12,6 +12,10 @@ Run this command on your Linux machine to start a Redis container and map its po
 docker run --name my-redis -p 6379:6379 -d redis
 ```
 
+```bash
+docker exec -it my-redis redis-cli
+```
+
 The `-p 6379:6379` flag publishes the container's port 6379 to the same port on the Linux host, allowing external connections.
 
 **2. Open the Firewall**

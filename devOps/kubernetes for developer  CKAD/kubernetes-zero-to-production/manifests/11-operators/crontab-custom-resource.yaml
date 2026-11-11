@@ -1,0 +1,10 @@
+# Module: 11 Operators | Lesson: 33
+# A custom resource instance for the CronTab CRD installed by the example operator.
+apiVersion: stable.example.com/v1
+kind: CronTab
+metadata:
+  name: my-crontab
+spec:
+  cronSpec: "*/5 * * * *"
+  image: my-cron-job:latest
+  replicas: 3

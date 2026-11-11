@@ -1,0 +1,90 @@
+# Documentation Hub
+
+This is the navigation center for the full 46-lesson Kubernetes curriculum.
+
+## Table of Contents
+
+- [Curriculum Map](#curriculum-map)
+- [How to Use This Repository](#how-to-use-this-repository)
+- [Lesson Template](#lesson-template)
+- [Module Index](#module-index)
+- [Supporting Material](#supporting-material)
+- [Status Legend](#status-legend)
+
+---
+
+## Curriculum Map
+
+The curriculum is organized into 14 modules. Each module contains a set of sequential lessons.
+
+| Module | Lessons | Focus | Status |
+|--------|---------|-------|--------|
+| [01 Fundamentals](01-fundamentals/README.md) | 1-2 | Kubernetes basics and kubectl | Complete (2/2) |
+| [02 Architecture](02-architecture/README.md) | 3-5 | Control plane and worker node internals | Complete (3/3) |
+| [03 Workloads](03-workloads/README.md) | 6-12 | Pods, Deployments, StatefulSets and more | Complete (7/7) |
+| [04 Networking](04-networking/README.md) | 13-18 | Networking, Services, Ingress, Network Policies | Complete (6/6) |
+| [05 Storage](05-storage/README.md) | 19 | Volumes, Persistent Volumes, Storage Classes | Complete (1/1) |
+| [06 Configuration](06-configuration/README.md) | 20-21 | ConfigMaps, Secrets, resource management | Complete (2/2) |
+| [07 Security](07-security/README.md) | 22-23 | Authentication, RBAC, Pod Security Standards | Complete (2/2) |
+| [08 Observability](08-observability/README.md) | 24-28 | Monitoring, logging, probes | Complete (5/5) |
+| [09 Packaging](09-packaging/README.md) | 29-30 | Helm and Kustomize | Complete (2/2) |
+| [10 GitOps](10-gitops/README.md) | 31-32 | GitOps principles, Argo CD, Flux | Complete (2/2) |
+| [11 Operators](11-operators/README.md) | 33-34 | CRDs and the Operator pattern | Complete (2/2) |
+| [12 Production](12-production/README.md) | 35-40 | Autoscaling, HA, hardening, capacity | Complete (6/6) |
+| [13 Troubleshooting](13-troubleshooting/README.md) | 41-42 | Workload, node, and network debugging | Complete (2/2) |
+| [14 Certifications](14-certifications/README.md) | 43-46 | CKA, CKAD, CKS exam preparation | Complete (4/4) |
+
+## How to Use This Repository
+
+- Start with `01-fundamentals` and follow the modules in order.
+- Each module page lists its lessons, learning outcomes, and dependencies.
+- When a lesson is published, it appears as a link in its module index.
+- Hands-on lessons point to labs in the top-level `labs/` directory.
+- Manifests referenced by lessons live in the top-level `manifests/` directory.
+- Use `revision/` and `cheatsheets/` for quick review after completing a module.
+
+## Lesson Template
+
+Every lesson follows one consistent template so the learning experience is uniform across the curriculum. The template defines 22 required sections.
+
+See [lesson-template.md](_templates/lesson-template.md) for the full structure.
+
+## Module Index
+
+| Module | Lessons | Lesson Range | Status |
+|--------|---------|--------------|--------|
+| Fundamentals | [README](01-fundamentals/README.md) | 1-2 | Complete |
+| Architecture | [README](02-architecture/README.md) | 3-5 | Complete |
+| Workloads | [README](03-workloads/README.md) | 6-12 | Complete |
+| Networking | [README](04-networking/README.md) | 13-18 | Complete |
+| Storage | [README](05-storage/README.md) | 19 | Complete |
+| Configuration | [README](06-configuration/README.md) | 20-21 | Complete |
+| Security | [README](07-security/README.md) | 22-23 | Complete |
+| Observability | [README](08-observability/README.md) | 24-28 | Complete |
+| Packaging | [README](09-packaging/README.md) | 29-30 | Complete |
+| GitOps | [README](10-gitops/README.md) | 31-32 | Complete |
+| Operators | [README](11-operators/README.md) | 33-34 | Complete |
+| Production | [README](12-production/README.md) | 35-40 | Complete |
+| Troubleshooting | [README](13-troubleshooting/README.md) | 41-42 | Complete |
+| Certifications | [README](14-certifications/README.md) | 43-46 | Complete |
+
+## Supporting Material
+
+| Directory | Purpose |
+|-----------|---------|
+| [labs/](../labs/README.md) | Hands-on lab exercises |
+| [manifests/](../manifests/README.md) | Ready-to-use YAML manifests |
+| [diagrams/](../diagrams/README.md) | Architecture and concept diagrams |
+| [assets/](../assets/README.md) | Images and static resources |
+| [interview/](../interview/README.md) | Interview questions by topic |
+| [revision/](../revision/README.md) | Condensed revision notes |
+| [cheatsheets/](../cheatsheets/README.md) | Quick-reference cheat sheets |
+| [scripts/](../scripts/README.md) | Reusable helper scripts |
+
+## Status Legend
+
+- `Planned` - not started
+- `In Progress` - actively being worked on
+- `Complete` - finished and verified
+
+[Back to top](#documentation-hub)

@@ -1,0 +1,50 @@
+# Module: 14 Certifications | Lesson: 45
+# A CronJob-like etcd snapshot backup manifest used in the CKA exam / disaster recovery.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: kube-system
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: etcd-backup
+            image: bitnami/etcd:3.5
+            env:
+            - name: ETCDCTL_API
+              value: "3"
+            - name: ETCDCTL_ENDPOINTS
+              value: "https://127.0.0.1:2379"
+            - name: ETCDCTL_CACERT
+              value: /etc/kubernetes/pki/etcd/ca.crt
+            - name: ETCDCTL_CERT
+              value: /etc/kubernetes/pki/etcd/server.crt
+            - name: ETCDCTL_KEY
+              value: /etc/kubernetes/pki/etcd/server.key
+            command:
+            - /bin/sh
+            - -c
+            - |
+              mkdir -p /backup
+              ETCDCTL_API=3 etcdctl --endpoints=$ETCDCTL_ENDPOINTS \
+                --cacert=$ETCDCTL_CACERT --cert=$ETCDCTL_CERT --key=$ETCDCTL_KEY \
+                snapshot save /backup/snapshot.db
+              ls -la /backup
+            volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: pki
+              mountPath: /etc/kubernetes/pki/etcd
+              readOnly: true
+          volumes:
+          - name: backup
+            hostPath:
+              path: /var/lib/etcd-backup
+          - name: pki
+            hostPath:
+              path: /etc/kubernetes/pki/etcd
+          restartPolicy: OnFailure

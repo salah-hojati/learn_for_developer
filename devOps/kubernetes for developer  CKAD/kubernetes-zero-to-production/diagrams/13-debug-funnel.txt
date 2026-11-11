@@ -1,0 +1,117 @@
+# Module 13 | Covers: Debugging funnel (Service -> Endpoints -> Pod -> Container -> Logs/events), kubectl debug ephemeral container, node pressure conditions
+# Lessons: 41-42
+
+# Debugging Funnel (Top-Down Diagnosis)
++------------------------------------------------------------------+
+|                 DEBUGGING FUNNEL (TOP-DOWN)                       |
+|                                                                  |
+|  Symptom: "app responds with 503 / slow / not reachable"          |
+|                                                                  |
+|  STEP 1: SERVICE                                                     |
+|  +----------------------------------------------------------+    |
+|  |  kubectl get svc my-svc -o wide                       |    |
+|  |  - ClusterIP, selector labels                        |    |
+|  |  - does selector match running pods?                |    |
+|  |  - ports: targetPort matches container port?      |    |
+|  +----------------------------------------------------------+    |
+|        |                                                         |
+|        v  (selector must match pods)                            |
+|  STEP 2: ENDPOINTS                                                    |
+|  +----------------------------------------------------------+    |
+|  |  kubectl get endpoints my-svc                        |    |
+|  |  - addresses: []  -> no matching pods!                |    |
+|  |  - conditions: ready/notReady                       |    |
+|  +----------------------------------------------------------+    |
+|        |                                                         |
+|        v  (endpoint exists, pod not ready)                      |
+|  STEP 3: POD                                                        |
+|  +----------------------------------------------------------+    |
+|  |  kubectl get pods -l app=my-svc -n ns                |    |
+|  |  - STATUS: Running/Pending/Failed/Unknown           |    |
+|  |  - RESTARTS: 5 (crash loop?)                         |    |
+|  |  - READY: 0/1                                       |    |
+|  +----------------------------------------------------------+    |
+|        |                                                         |
+|        v  (pod ready, but app unhealthy)                        |
+|  STEP 4: CONTAINER                                                 |
+|  +----------------------------------------------------------+    |
+|  |  kubectl describe pod <pod>                        |    |
+|  |  - Events: FailedScheduling, BackOff,               |    |
+|  |    ImagePullBackOff, OOMKilled, CrashLoopBackOff  |    |
+|  |  - Warnings: node under memory pressure            |    |
+|  +----------------------------------------------------------+    |
+|        |                                                         |
+|        v  (container running, app issue)                        |
+|  STEP 5: LOGS / EXEC                                                  |
+|  +----------------------------------------------------------+    |
+|  |  kubectl logs <pod> --previous                  |    |
+|  |  kubectl exec -it <pod> -- /bin/sh               |    |
+|  |  - check env, config mounts, network, perms     |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  kubectl debug <pod> -it --image=nixery bash        (ephemeral) |
+|  -> injects debugger container sharing PID/namespace (1.18+)     |
++------------------------------------------------------------------+
+
+# Ephemeral Debug Container
++------------------------------------------------------------------+
+|                EPHEMERAL DEBUG CONTAINER                          |
+|                                                                  |
+|  kubectl debug myapp-647b8f9d5-x8n2k -it \                     |
+|    --image=busybox --target=myapp                                  |
+|                                                                  |
+|  +----------------------------------------------------------+    |
+|  |  TARGET POD (myapp)                                    |    |
+|  |  +-----------+                                            |
+|  |  | Container A| (myapp, PID 1)      <-shares ns->        |
+|  |  +-----------+                       with debugger           |
+|  |  +-----------+       <-- injected ephemeral here:          |
+|  |  | Ephemeral | (busybox, PID 10)     shares PID/net/       |
+|  |  |  debugger|  (shares process namespace)               |
+|  |  +-----------+                                            |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  Capabilities:                                                   |
+|  - nsenter into target container's PID namespace               |
+|  - read /proc/<pid>/{status,maps,net,fd}                       |
+|  - strace, lsof, curl against 127.0.0.1 (shared netns)        |
+|  - copy files in/out (--copy-to)                              |
+|                                                                  |
+|  Restrictions:                                                   |
+|  - cannot add to running pod (must create copy /debug pod)     |
+|  - target container must share processNamespace OR            |
+|    use --target=<container> (shares that container's PID ns)    |
+|  - ephemeral containers NOT counted in restartPolicy            |
++------------------------------------------------------------------+
+
+# Node Pressure Conditions
++------------------------------------------------------------------+
+|        NODE PRESSURE CONDITIONS & SYSTEM DIAGNOSIS                 |
+|                                                                  |
+|  kubectl get --raw /api/v1/nodes/<node>/proxy/stats/summary      |
+|  kubectl describe node <node>                                    |
+|                                                                  |
+|  NODE CONDITIONS:                                                 |
+|  +----------------------------------------------------------+    |
+|  |  OutOfDisk      |  DiskPressure   |  MemoryPressure |   |    |
+|  |  (no disk space)|  (imagefs low)  |  (low memory)  |   |    |
+|  +----------------------------------------------------------+    |
+|  |  PIDPressure   |  NetworkUnavailable|  Ready      |   |    |
+|  |  (PID limit hit)|  (no CNI ready)   |  Unknown   |   |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  DIAGNOSIS CHECKS:                                               |
+|  - df -h / df /imagefs (node root + image filesystem)           |
+|  - free -m, top (memory)                                         |
+|  - ps aux / crictl ps (PIDs, containers)                         |
+|  - journalctl -u kubelet                                         |
+|  - crictl stats -o json (container resource usage)              |
+|                                                                  |
+|  Eviction (MemoryPressure):                                      |
+|  BestEffort -> Burstable -> Guaranteed  (pod deleted w/           |
+|  gracePeriod, finalizers run preStop)                            |
+|                                                                  |
+|  kubectl get events -n <ns> --sort-by=.lastTimestamp            |
+|  kubectl top nodes / kubectl top pods -n <ns>                    |
+|  kubectl get csidrivers, storageclasses (volume attach errors)  |
++------------------------------------------------------------------+

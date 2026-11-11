@@ -1,0 +1,110 @@
+# Module 06 | Covers: Resource requests/limits, QoS classes, LimitRange defaults, ResourceQuota counting, eviction under pressure
+# Lesson: 20-21
+
+# QoS Class Determination
++------------------------------------------------------------------+
+|                      QoS CLASS DETERMINATION                     |
+|                                                                  |
+|  A Pod's QoS class is computed from request/limit declarations:  |
+|                                                                  |
+|  +----------------+----------------+----------------+              |
+|  |  GUARANTEED    |  BURSTABLE     |  BESTEFFECT   |              |
+|  +----------------+----------------+----------------+              |
+|  | Every container has request==limit (any key) |              |
+|  | No container may set request<limit         |              |
++------------------------------------------------------------------+
+|  | At least one container has request<limit      |              |
+|  | At least one container has NO requests at all|              |
+|  +----------------+----------------+----------------+              |
+|  | Memory: min(usage) across containers          |              |
+|  | CPU: no requests -> share of node CPU         |              |
+|  | Eviction priority: LOWEST (evicted first)     |              |
+|  +----------------+----------------+----------------+              |
+|                                                                  |
+|  Eviction ranking (kubelet, under MemoryPressure /          |
+|  DiskPressure / PIDPressure):                                    |
+|  1. BestEffort  (no requests)   -> evicted first                |
+|  2. Burstable   (low request)   -> evicted by request<limit      |
+|  3. Guaranteed  (request==limit) -> evicted last (never)       |
+|                                                                  |
+|  Memory enforcement uses cgroups (memory.limit_in_bytes) and    |
+|  CPU uses CFS quota (cpu.cfs_quota_us / cpu.cfs_period_us)      |
++------------------------------------------------------------------+
+
+# LimitRange & ResourceQuota
++------------------------------------------------------------------+
+|           LIMITRANGE & RESOURCEQUOTA (namespace-level)            |
+|                                                                  |
+|  LIMITRANGE (applies to Pods/Containers without explicit values):  |
+|  +----------------------------------------------------------+    |
+|  | apiVersion: v1                                           |    |
+|  | kind: LimitRange                                        |    |
+|  | limits:                                                  |    |
+|  | - type: Container                                       |    |
+|  |   default: { cpu: 200m, memory: 128Mi }              |    |
+|  |   defaultRequest: { cpu: 100m, memory: 64Mi }        |    |
+|  |   max: { cpu: 2, memory: 2Gi }                          |    |
+|  |   min: { cpu: 50m, memory: 32Mi }                       |    |
+|  |   maxLimitRequestRatio: { cpu: 4, memory: 8 }           |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  RESOURCEQUOTA (hard caps for a namespace):                      |
+|  +----------------------------------------------------------+    |
+|  | requests.cpu: 10      limits.cpu: 20                     |    |
+|  | requests.memory: 20Gi  limits.memory: 40Gi               |    |
+|  | requests.storage: 100Gi  limits.storage: 200Gi          |  <- |
+|  | pods: 50    services: 20    persistentvolumeclaims:30  |    |
+|  | configmaps: 100  secrets: 100  replicationcontrollers|1|    |
+|  | resourceQuotas: 1   limitRanges: 10                    |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  Counting: quota counts against the REQUEST values declared      |
+|  (not usage), so Burstable pods reserve request; Guaranteed      |
+|  consumes the full requested amount. Services (headless) count  |
+|  toward the `services` quota; LoadBalancer/NodePort toward       |
+|  `services.loadbalancers` / `services.nodeports`.               |
++------------------------------------------------------------------+
+
+# Admission: Quota & Defaulting Order
++------------------------------------------------------------------+
+|           ADMISSION PIPELINE (ResourceQuota + LimitRange)         |
+|                                                                  |
+|  Request: POST /api/v1/namespaces/{ns}/pods                     |
+|                                                                  |
+|  MutatingAdmissionWebhook                                       |
+|    -> ServiceAccount admission (inject default SA + token)       |
+|    -> Defaulting (inject default namespace/name)                 |
+|                                                                  |
+|  ValidatingAdmissionWebhook                                     |
+|    -> LimitRanger (fills missing request/limit via defaults)    |
+|    -> ResourceQuota (checks request against remaining quota)    |
+|      if over quota -> DENY "exceeded quota"                      |
+|    -> PodSecurity (validate against PSP/namespace labels)        |
+|    -> NodeAffinity/ NodeResources (optional scheduler-extender)  |
+|                                                                  |
+|  -> API server persists to etcd -> scheduler binds to node      |
++------------------------------------------------------------------+
+
+# Node-Pressure Eviction
++------------------------------------------------------------------+
+|            NODE PRESSURE CONDITIONS & EVICTION                    |
+|                                                                  |
+|  kubelet reports Node conditions:                               |
+|    +--------------------------------------------------------+   |
+|    |  OutOfDisk        |  DiskPressure (imagefs)          |   |
+|    |  MemoryPressure    |  PIDPressure (PIDs >= max)       |   |
+|    |  NetworkUnavailable|  Ready=Unknown (drain)           |   |
+|    +--------------------------------------------------------+   |
+|                                                                  |
+|  Under MemoryPressure, kubelet evicts (in priority order):      |
+|  1. BestEffort pods with highest memory usage                   |
+|  2. Burstable pods whose request/shortfall is smallest           |
+|  3. Guaranteed pods only if system critical and overcommitted   |
+|                                                                  |
+|  Eviction thresholds (kubelet config):                          |
+|    memory.available: 100Mi  |  memory.available: 10%              |
+|    nodefs.available: 5%     |  imagefs.available: 10%             |
+|    pid.available: 5%        |  ...                                |
+|                                                                  |
+|  soft eviction (grace) vs hard eviction (immediate SIGKILL)     |
++------------------------------------------------------------------+

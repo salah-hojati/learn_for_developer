@@ -1,0 +1,24 @@
+
+@startuml
+!include Style.puml
+
+title PlantUML + IntelliJ IDEA on Ubuntu
+
+actor User
+participant "IntelliJ IDEA" as IDE
+participant "PlantUML Plugin" as Plugin
+database "Graphviz (dot)" as GV
+
+User -> IDE: Create sample-sequence.puml
+IDE -> Plugin: Request live preview
+Plugin -> GV: Generate diagram with dot
+GV --> Plugin: SVG output
+Plugin --> IDE: Render preview
+IDE --> User: Show diagram
+
+note right of Plugin
+  Requires Java and Graphviz
+  installed on Ubuntu.
+end note
+
+@enduml

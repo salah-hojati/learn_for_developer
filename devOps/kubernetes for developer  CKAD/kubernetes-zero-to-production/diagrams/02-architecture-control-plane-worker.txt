@@ -1,0 +1,104 @@
+# Module 02: Architecture - Control Plane & Worker Node Components
+# Lessons: 3-5
+
+# Control Plane Components
++------------------------------------------------------------------+
+|                      CONTROL PLANE                               |
+|  (Typically 3+ nodes for HA)                                     |
+|                                                                  |
+|  +------------------+   +------------------+   +--------------+  |
+|  |   API SERVER     |   |     ETCD         |   |  SCHEDULER   |  |
+|  |  (kube-apiserver)|   |  (key-value store)|   | (kube-scheduler|  |
+|  |                  |   |                  |   |              |  |  |
+|  | - REST endpoint  |   | - Cluster state  |   | - Pod assign |  |  |
+|  | - AuthN/AuthZ    |   | - Watch mechanism|   | - Scoring    |  |  |
+|  | - Admission ctrl |   | - Raft consensus |   | - Binding    |  |  |
+|  | - Aggregation    |   | - Backup/restore |   | - Extenders  |  |  |
+|  +--------+---------+   +--------+---------+   +------+-------+  |
+|           |                       |                     |         |
+|           |            +----------+----------+          |         |
+|           |            |                      |          |         |
+|           v            v                      v          v         |
+|  +------------------+   +------------------+   +----------------+  |
+|  | CONTROLLER MANAGER|   | CLOUD CONTROLLER|   |  ADDITIONAL    |  |
+|  | (kube-controller- |   | MANAGER         |   |  COMPONENTS    |  |
+|  |  manager)        |   | (cloud-controller|   |                |  |
+|  |                  |   |  -manager)       |   | - Cluster DNS  |  |
+|  | - Node ctrl      |   |                 |   | - CNI plugin   |  |
+|  | - Replica ctrl   |   | - Node ctrl     |   | - CSI driver   |  |
+|  | - Endpoint ctrl  |   | - Route ctrl    |   | - Metrics srv  |  |
+|  | - ServiceAccount |   | - Service ctrl  |   | - Webhooks     |  |
+|  +------------------+   +------------------+   +----------------+  |
++------------------------------------------------------------------+
+
+# Worker Node Components
++------------------------------------------------------------------+
+|                        WORKER NODE                               |
+|                                                                  |
+|  +----------------------------------------------------------+   |
+|  |                    KUBELET                               |   |
+|  |  - Pod lifecycle management                              |   |
+|  |  - Container health checks (probes)                      |   |
+|  |  - Resource monitoring (cAdvisor)                        |   |
+|  |  - Node registration & status reporting                  |   |
+|  |  - Volume mounting                                       |   |
+|  |  - Secret/ConfigMap injection                            |   |
+|  +---------------------------+------------------------------+   |
+|                              |                                 |
+|                              v                                 |
+|  +----------------------------------------------------------+   |
+|  |              CONTAINER RUNTIME INTERFACE (CRI)           |   |
+|  |  containerd / cri-o / Docker (deprecated)                |   |
+|  |  - Image pull                                            |   |
+|  |  - Container create/start/stop                           |   |
+|  |  - Sandbox (pause container) management                  |   |
+|  +---------------------------+------------------------------+   |
+|                              |                                 |
+|              +---------------+---------------+                 |
+|              v                               v                 |
+|  +--------------------------+      +--------------------------+ |
+|  |       RUNC / CRUN        |      |      CNI PLUGINS         | |
+|  |  - Namespace setup       |      |  - Pod network setup     | |
+|  |  - Cgroup configuration  |      |  - IP assignment         | |
+|  |  - Rootfs pivot          |      |  - Route configuration   | |
+|  |  - Process execution     |      |  - DNS configuration     | |
+|  +--------------------------+      +--------------------------+ |
+|                                                                  |
+|  +----------------------------------------------------------+   |
+|  |                    KUBE-PROXY                            |   |
+|  |  - Service abstraction (ClusterIP, NodePort, LoadBalancer)|   |
+|  |  - Backend: iptables / IPVS / nftables                   |   |
+|  |  - Connection tracking & load balancing                  |   |
+|  +----------------------------------------------------------+   |
+|                                                                  |
+|  +----------------------------------------------------------+   |
+|  |                       POD                                |   |
+|  |  +--------+  +--------+  +--------+  +--------+          |   |
+|  |  |Container|  |Container|  |Container|  | Pause  |          |   |
+|  |  |   A    |  |   B    |  |   C    |  |(sandbox)|          |   |
+|  |  +--------+  +--------+  +--------+  +--------+          |   |
+|  |  |  Shared Network Namespace  |  Shared Volume Mounts   |   |
+|  +----------------------------------------------------------+   |
++------------------------------------------------------------------+
+
+# Control Plane <-> Worker Node Communication
++------------------------------------------------------------------+
+|  CONTROL PLANE                              WORKER NODES         |
+|  +------------------+                     +------------------+   |
+|  |    API SERVER    | <-- watch / list -->|     KUBELET      |   |
+|  +------------------+   (Pod specs,       +------------------+   |
+|         ^              |   Secrets,        |         ^            |
+|         |              |   ConfigMaps)     |         |            |
+|         |              |                 |         |            |
+|    +----+----+         |                 |    +----+----+       |
+|    |         |         |                 |    |         |       |
+|    |  SCHED- |         |                 |    | CRI /   |       |
+|    |  ULER   |         |                 |    | RUNTIME |       |
+|    |         |         |                 |    |         |       |
+|    +----+----+         |                 |    +----+----+       |
+|         |              |                 |         |            |
+|    +----+----+         |                 |    +----+----+       |
+|    | CONTROLLER|       |                 |    | KUBE-  |       |
+|    |  MANAGER  |       |                 |    | PROXY  |       |
+|    +----------+         |                 |    +--------+       |
++-------------------------+-----------------+----------------------+

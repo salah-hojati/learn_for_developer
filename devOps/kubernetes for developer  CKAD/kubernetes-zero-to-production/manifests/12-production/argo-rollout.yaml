@@ -1,0 +1,55 @@
+# Module: 12 Production | Lesson: 40
+# Argo Rollouts canary strategy with a Prometheus analysis path gate.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: web-rollout
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:alpine
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+  strategy:
+    canary:
+      steps:
+      - setWeight: 10
+      - pause: {duration: 30s}
+      - setWeight: 50
+      - pause: {duration: 30s}
+      analysis:
+        templates:
+        - templateName: error-rate
+        args:
+        - name: service-name
+          value: web
+---
+# AnalysisTemplate evaluated during the canary to gate traffic.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate
+spec:
+  metrics:
+  - name: error-rate
+    interval: 30s
+    count: 3
+    failureLimit: 2
+    provider:
+      prometheus:
+        address: http://prometheus:9090
+        query: |
+          sum(rate(http_requests_total{service="{{args.service-name}}",status=~"5.."}[1m]))
+          /
+          sum(rate(http_requests_total{service="{{args.service-name}}"}[1m]))

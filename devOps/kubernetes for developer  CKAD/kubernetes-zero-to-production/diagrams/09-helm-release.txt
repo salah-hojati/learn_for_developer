@@ -1,0 +1,90 @@
+# Module 09 | Covers: Chart structure (Chart.yaml/values/templates + charts deps), release, revision history, upgrade/rollback, three-way merge
+# Lessons: 29-30
+
+# Helm Chart Structure
++------------------------------------------------------------------+
+|                       HELM CHART STRUCTURE                       |
+|                                                                  |
+|  mychart/                                                        |
+|  +-- Chart.yaml        (metadata: name,version,appVersion,    |
+|  |   apiV, type,dependencies)                                   |
+|  +-- values.yaml       (default configuration)                   |
+|  +-- charts/           (packaged sub-charts: *.tgz deps)        |
+|  +-- templates/                                                    |
+|  |   deployment.yaml                                             |
+|  |   _helpers.tpl     (named templates)                         |
+|  |   configmap.yaml                                              |
+|  |   secret.yaml                                                 |
+|  |   service.yaml                                                |
+|  |   ingress.yaml    (conditional: {{- if .Values.ingress... |
+|  |   _test/            (test manifests)                       |
+|  |   tests/test-connection.yaml                             |
+|  +-- crds/             (custom resource definitions,        |
+|  |                     installed once, never templated)       |
+|                                                                  |
+|  VALUES CASCADE: $HELM_VALUES -> --values flag ->            |
+|  --set key=val -> chart.defaults (last wins)                     |
+|                                                                  |
+|  TEMPLATING: Go template + Sprig functions:                     |
+|  {{- include "mychart.fullname" . }}                            |
+|  {{ .Release.Name }} {{ .Values.replicaCount }} {{ .Chart.App|
+|  Version }}                                                     |
++------------------------------------------------------------------+
+
+# Release Lifecycle (Install -> Upgrade -> Rollback)
++------------------------------------------------------------------+
+|                   RELEASE LIFECYCLE & HISTORY                     |
+|                                                                  |
+|  INSTALL:                                                        |
+|  helm install prod ./mychart -n web --create-namespace          |
+|    -> renders templates -> POST to kube-apiserver              |
+|    -> creates Secret SHIPWRECK-CRABBIT          (release data)   |
+|    -> revision: 1                                             |
+|                                                                  |
+|  UPGRADE:                                                        |
+|  helm upgrade prod ./mychart --set image.tag=v2                 |
+|    -> THREE-WAY MERGE STRATEGY:                                 |
+|      cluster state (live)                                       |
+|        vs                                                            |
+|      old manifest (from rev N-1 Secret)                         |
+|        vs                                                            |
+|      new manifest (rendered now)                                |
+|    -> computes patch -> applies to cluster                        |
+|    -> stores new Secret rev N                                   |
+|                                                                  |
+|  HISTORY:                                                        |
+|  helm history prod                                                 |
+|  REVISION UPDATED STATUS    CHART      APP    DESCRIPTION      |
+|  1        ...    deployed  mychart-0.1.0 1.0    Install+complete |
+|  2        ...    deployed  mychart-0.1.0 2.0    Upgrade  (dry run |
+|  3        ...    pending   mychart-0.1.0 2.1    Upgrade  failed |
+|                                                                  |
+|  ROLLBACK:                                                       |
+|  helm rollback prod 1          (redeploy rev1 manifest)          |
+|    -> three-way merge against live state                        |
+|    -> new revision 4 (copies rev1 content)                       |
+|  helm uninstall prod  (deletes all owned resources + release)|
++------------------------------------------------------------------+
+
+# Hooks & Test Lifecycle
++------------------------------------------------------------------+
+|         HOOKS, TESTS & DEPENDENCY RESOLUTION                      |
+|                                                                  |
+|  HOOK EVENTS (annotate "helm.sh/hook"):           |
+|  pre-install, post-install, pre-upgrade,          |
+|  post-upgrade, pre-delete, post-delete, crd-install|
+|  + weight (lower runs first), delete-policy (before)|
+|                                                                  |
+|  RELEASE HOOK FLOW (upgrade with hook):                         |
+|  1. Render (no execute) -> compute manifests                    |
+|  2. Run pre-upgrade hook Jobs (block until Ready)               |
+|  3. Apply three-way merge to cluster                            |
+|  4. Wait for rollout (if --wait / atomic)                       |
+|  5. Run post-upgrade hook Jobs                                  |
+|  6. Update release Secret (revision++)                          |
+|                                                                  |
+|  dependency: chart.yaml -> charts/*.tgz OR  |
+|  helm dependency build (packs subcharts locally)                |
+|                                                                  |
+|  TESTS: helm test prod  (runs templates in templates/tests/)    |
++------------------------------------------------------------------+

@@ -1,0 +1,243 @@
+# Module 07: Security - RBAC, ServiceAccount, PodSecurity, SecurityContext
+# Lessons: 22-23
+
+# RBAC Flow: User -> RoleBinding -> Role -> Verbs
++------------------------------------------------------------------+
+|                        RBAC AUTHORIZATION FLOW                   |
+|                                                                  |
+|  REQUEST: kubectl get pods -n production                         |
+|                                                                  |
+|  +--------------------------+                                    |
+|  |     AUTHENTICATION       |                                    |
+|  |  (x509 cert, token, OIDC,|                                    |
+|  |   webhook, proxy)        |                                    |
+|  |  -> User: alice          |                                    |
+|  |  -> Groups: system:auth  |                                    |
+|  +-----------+--------------+                                    |
+|              |                                                    |
+|              v                                                    |
+|  +--------------------------+                                    |
+|  |     AUTHORIZATION (RBAC) |                                    |
+|  |                          |                                    |
+|  |  1. Check ClusterRoleBinding / RoleBinding                |  |
+|  |     matching user "alice" or her groups                    |  |
+|  |                                                          |  |
+|  |  2. Found Binding:                                       |  |
+|  |     RoleBinding: alice-view-pods                         |  |
+|  |       subjects:                                          |  |
+|  |       - kind: User                                       |  |
+|  |         name: alice                                      |  |
+|  |       roleRef:                                           |  |
+|  |         kind: Role                                       |  |
+|  |         name: pod-reader                                 |  |
+|  |                                                          |  |
+|  |  3. Check Role:                                          |  |
+|  |     Role: pod-reader (namespace: production)             |  |
+|  |       rules:                                             |  |
+|  |       - apiGroups: [""]                                  |  |
+|  |         resources: ["pods"]                              |  |
+|  |         verbs: ["get", "list", "watch"]                  |  |
+|  |                                                          |  |
+|  |  4. MATCH: Request verb "get" on resource "pods"         |  |
+|  |     -> ALLOW                                             |  |
+|  +-----------+--------------+                                    |
+|              |                                                    |
+|              v                                                    |
+|  +--------------------------+                                    |
+|  |     ADMISSION CONTROL    |                                    |
+|  |  (ValidatingAdmissionWebhooks,                             |  |
+|  |   MutatingAdmissionWebhooks,                                |  |
+|  |   PodSecurity, ResourceQuota)                               |  |
+|  +-----------+--------------+                                    |
+|              |                                                    |
+|              v                                                    |
+|  +--------------------------+                                    |
+|  |     ETCD PERSISTENCE     |                                    |
+|  +--------------------------+                                    |
+|                                                                  |
+|  RBAC OBJECTS HIERARCHY:                                         |
+|                                                                  |
+|  CLUSTER SCOPE                          NAMESPACE SCOPE          |
+|  +------------------+                 +------------------+       |
+|  | ClusterRole      |                 | Role             |       |
+|  | - cluster-wide   |                 | - namespace-only |       |
+|  | - non-resource   |                 |                  |       |
+|  |   URLs (/health) |                 |                  |       |
+|  +--------+---------+                 +--------+---------+       |
+|           |                                 |                   |
+|           | ClusterRoleBinding              | RoleBinding       |
+|           v                                 v                   |
+|  +------------------+                 +------------------+       |
+|  | Subject: User,   |                 | Subject: User,   |       |
+|  | Group, SA        |                 | Group, SA        |       |
+|  | -> ClusterRole   |                 | -> Role          |       |
+|  +------------------+                 +------------------+       |
+|                                                                  |
+|  DEFAULT ROLES:                                                   |
+|  - cluster-admin: Full cluster access                             |
+|  - admin: Full namespace access                                   |
+|  - edit: Read/write namespace resources                           |
+|  - view: Read-only namespace resources                            |
++------------------------------------------------------------------+
+
+# ServiceAccount Token Mount
++------------------------------------------------------------------+
+|                    SERVICEACCOUNT TOKEN MOUNT                    |
+|                                                                  |
+|  SERVICEACCOUNT CREATION:                                        |
+|  +----------------------------------------------------------+    |
+|  | apiVersion: v1                                           |    |
+|  | kind: ServiceAccount                                     |    |
+|  | metadata:                                                |    |
+|  |   name: my-sa                                            |    |
+|  |   namespace: default                                     |    |
+|  | automountServiceAccountToken: true                       |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  TOKEN GENERATION (TokenRequest API, projected volume):        |
+|  +----------------------------------------------------------+    |
+|  |  1. Pod created with spec.serviceAccountName: my-sa      |    |
+|  |  2. Admission controller adds projected volume:          |    |
+|  |     volumes:                                             |    |
+|  |     - name: kube-api-access-xxxxx                        |    |
+|  |       projected:                                         |    |
+|  |         sources:                                         |    |
+|  |         - serviceAccountToken:                           |    |
+|  |             path: token                                  |    |
+|  |             expirationSeconds: 3600                      |    |
+|  |             audience: kubernetes.default.svc             |    |
+|  |         - configMap: {name: kube-root-ca.crt}            |    |
+|  |         - downwardAPI: {items: [{path: namespace}]}      |    |
+|  |  3. Volume mounted at /var/run/secrets/kubernetes.io/    |    |
+|  |                                                                  |
+|  |  POD FS:                                                   |    |
+|  |  /var/run/secrets/kubernetes.io/serviceaccount/          |    |
+|  |  ├── token       (JWT, audience-bound, TTL)              |    |
+|  |  ├── ca.crt      (API server CA)                         |    |
+|  |  └── namespace   (current namespace)                     |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  LEGACY (deprecated):                                            |
+|  - Secret-based tokens (non-expiring)                          |
+|  - Mounted at same path                                        |
+|  - Disabled by default in 1.24+                                |
+|                                                                  |
+|  BOUND SERVICE ACCOUNT TOKEN (recommended):                    |
+|  - audience: specific API server                                |
+|  - expiration: short-lived (1h default)                        |
+|  - bound to Pod UID                                            |
+|  - rotation via projected volume                               |
++------------------------------------------------------------------+
+
+# PodSecurity Admission: Privileged / Baseline / Restricted
++------------------------------------------------------------------+
+|                   PODSECURITY ADMISSION POLICIES                 |
+|                                                                  |
+|  NAMESPACE LABELS (enforce/warn/audit per level):                |
+|  +----------------------------------------------------------+    |
+|  | metadata:                                                |    |
+|  |   labels:                                                |    |
+|  |     pod-security.kubernetes.io/enforce: restricted       |    |
+|  |     pod-security.kubernetes.io/enforce-version: latest   |    |
+|  |     pod-security.kubernetes.io/warn: restricted          |    |
+|  |     pod-security.kubernetes.io/audit: restricted         |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  THREE PROFILES:                                                 |
+|                                                                  |
+|  +--------------------------+  +--------------------------+      |
+|  |  PRIVILEGED              |  |  BASELINE                |      |
+|  |  (No restrictions)       |  |  (Minimal hardening)     |      |
+|  |                          |  |                          |      |
+|  |  - All permissions       |  |  - No known privilege    |      |
+|  |  - Host namespaces       |  |    escalations           |      |
+|  |  - Host filesystem       |  |  - No host namespaces    |      |
+|  |  - All capabilities      |  |  - No hostPath volumes   |      |
+|  |  - Any user/group        |  |  - Limited capabilities  |      |
+|  |                          |  |  - Non-root user         |      |
+|  |  Use: System daemons,    |  |                          |      |
+|  |  infrastructure          |  |  Use: Most applications  |      |
+|  +--------------------------+  +--------------------------+      |
+|                                                                  |
+|  +--------------------------+                                    |
+|  |  RESTRICTED              |                                    |
+|  |  (Heavy hardening,        |                                    |
+|  |   follows Pod Security    |                                    |
+|  |   Standards)              |                                    |
+|  |                          |                                    |
+|  |  - All Baseline rules    |                                    |
+|  |  - RunAsNonRoot: true    |                                    |
+|  |  - RunAsUser: no root    |                                    |
+|  |  - Seccomp: required     |                                    |
+|  |  - Capabilities: drop ALL|                                    |
+|  |  - No privileged         |                                    |
+|  |  - Read-only root FS     |                                    |
+|  |  - Volume types limited  |                                    |
+|  |                          |                                    |
+|  |  Use: Multi-tenant,       |                                    |
+|  |  untrusted workloads     |                                    |
+|  +--------------------------+                                    |
+|                                                                  |
+|  EXEMPTIONS (namespace labels):                                  |
+|  - pod-security.kubernetes.io/exemptions:                      |
+|    users, runtimeclasses, namespaces                            |
++------------------------------------------------------------------+
+
+# SecurityContext Fields (Pod & Container Level)
++------------------------------------------------------------------+
+|                      SECURITYCONTEXT FIELDS                      |
+|                                                                  |
+|  POD-LEVEL SECURITYCONTEXT:                                      |
+|  +----------------------------------------------------------+    |
+|  | spec:                                                    |    |
+|  |   securityContext:                                       |    |
+|  |     runAsNonRoot: true              # No root in any     |    |
+|  |     runAsUser: 1000                 # UID for all        |    |
+|  |     runAsGroup: 3000                # GID for all        |    |
+|  |     fsGroup: 2000                   # Volume GID         |    |
+|  |     fsGroupChangePolicy: OnRootMismatch                   |    |
+|  |     supplementalGroups: [1000]      # Extra groups       |    |
+|  |     sysctls:                                        |    |
+|  |     - name: net.ipv4.ip_forward     # Kernel params    |    |
+|  |       value: "1"                    |                    |    |
+|  |     seccompProfile:                                |    |
+|  |       type: RuntimeDefault          # Or Localhost   |    |
+|  |       localhostProfile: my-profile                    |    |
+|  |     windowsOptions:                                 |    |
+|  |       runAsUserName: "ContainerUser"                   |    |
+|  |       gmsaCredentialSpecName: "my-gmsa"                |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  CONTAINER-LEVEL SECURITYCONTEXT:                                |
+|  +----------------------------------------------------------+    |
+|  | containers:                                              |    |
+|  | - name: app                                              |    |
+|  |   securityContext:                                       |    |
+|  |     allowPrivilegeEscalation: false  # No setuid       |    |
+|  |     capabilities:                                      |    |
+|  |       drop: ["ALL"]                # Drop all caps     |    |
+|  |       add: ["NET_BIND_SERVICE"]    # Add specific      |    |
+|  |     privileged: false              # No privileged     |    |
+|  |     readOnlyRootFilesystem: true     # Immutable root  |    |
+|  |     runAsNonRoot: true             # Override pod      |    |
+|  |     runAsUser: 1000                # Override pod      |    |
+|  |     runAsGroup: 3000               # Override pod      |    |
+|  |     procMount: Default             # Or Unmasked       |    |
+|  |     seccompProfile:                                 |    |
+|  |       type: RuntimeDefault                            |    |
+|  |     windowsOptions:                                   |    |
+|  |       runAsUserName: "ContainerUser"                   |    |
+|  +----------------------------------------------------------+    |
+|                                                                  |
+|  CAPABILITY EXAMPLES:                                            |
+|  - NET_BIND_SERVICE: bind ports < 1024                         |
+|  - SYS_TIME: set system clock                                  |
+|  - CAP_DAC_OVERRIDE: bypass file permissions                   |
+|  - ALL: drop all capabilities (recommended)                    |
+|                                                                  |
+|  SECCOMP PROFILES:                                               |
+|  - RuntimeDefault: Docker default profile                      |
+|  - Localhost: custom profile on node at /var/lib/kubelet/      |
+|    seccomp/profiles/                                           |
+|  - Unconfined: no seccomp (dangerous)                          |
++------------------------------------------------------------------+

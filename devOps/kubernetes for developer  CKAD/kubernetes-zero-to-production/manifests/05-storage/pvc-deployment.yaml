@@ -1,0 +1,40 @@
+# Module: 05 Storage | Lesson: 19
+# A PersistentVolumeClaim that dynamically provisions storage via the default StorageClass.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-with-pvc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-with-pvc
+  template:
+    metadata:
+      labels:
+        app: web-with-pvc
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.25-alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: app-data

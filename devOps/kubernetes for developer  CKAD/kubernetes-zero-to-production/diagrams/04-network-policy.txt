@@ -1,0 +1,132 @@
+# Module 04 | Covers: NetworkPolicy default-deny, ingress/egress rules, DNS egress exception, namespace + pod selectors
+# Lessons: 13-18
+
+# NetworkPolicy Default-Deny Baseline
++------------------------------------------------------------------+
+|                  NETWORKPOLICY DEFAULT-DENY                       |
+|                                                                  |
+|  Before any NetworkPolicy is applied, ALL traffic (ingress and   |
+|  egress) to/from a Pod is ALLOWED by default (white-list model). |
+|                                                                  |
+|  +----------------------------------------------------------------+
+|  |  Applying a "default-deny" isolates a Pod:                     |
+|  |                                                                |
+|  |  apiVersion: networking.k8s.io/v1                             |
+|  |  kind: NetworkPolicy                                          |
+|  |  metadata:                                                    |
+|  |  name: default-deny-all                                       |
+|  |  spec:                                                        |
+|  |  podSelector: {}          (SELECTS ALL pods in namespace)     |
+|  |  policyTypes:                                               |
+|  |  - Ingress                                            |
+|  |  - Egress                                             |
+|  |  (no ingressSelector/no egressSelector = deny all)             |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  Result: Pod no longer receives OR initiates any traffic.        |
+|  Traffic is then opened up via additive allow-rules (each NP    |
+|  that matches a pod adds an ALLOW path).                        |
++------------------------------------------------------------------+
+
+# Ingress / Egress Rule Composition
++------------------------------------------------------------------+
+|              INGRESS & EGRESS RULE MATCHING                      |
+|                                                                  |
+|  A Pod is "isolated" for a direction if ANY NetworkPolicy        |
+|  selects it for that policyType. Multiple policies are additive |
+|  (union of all allows).                                          |
+|                                                                  |
+|  INGRESS (traffic INTO pod):                                     |
+|    +----------------------------------------------------------+  |
+|    |  from: []                                            |  |
+|    |    - namespaceSelector: matchLabels: team=frontend      |  |
+|    |    - podSelector: matchLabels: app=api                 |  |
+|    |    (AND of namespace + pod -> only api pods in          |  |
+|    |     frontend namespaces reach this pod)                 |  |
+|    |    - namespaceSelector + podSelector =                 |  |
+|    |      "pods of app=api that live in team=frontend ns"      |  |
+|    |    - ipBlock:                                                |
+|    |        cidr: 10.0.0.0/24                                  |  |
+|    |        except: 10.0.0.0/28                               |  |
+|    +----------------------------------------------------------+  |
+|    |  ports:                                                    |
+|    |    - protocol: TCP                                         |
+|    |      port: 8080                                            |  |
+|    +----------------------------------------------------------+  |
+|                                                                  |
+|  EGRESS (traffic FROM pod):                                      |
+|    +----------------------------------------------------------+  |
+|    |  to: []                                                |  |
+|    |    - namespaceSelector: matchLabels:                  |  |
+|    |        kubernetes.io/metadata.name=kube-system        |  |
+|    |    - podSelector: matchLabels: kube-dns                |  |
+|    |    - ipBlock: cidr: 192.168.0.0/16                  |  |
+|    +----------------------------------------------------------+  |
+|    |  ports:                                                    |
+|    |    - protocol: UDP                                         |
+|    |      port: 53                                            |  |
+|    +----------------------------------------------------------+  |
++------------------------------------------------------------------+
+
+# DNS Egress Exception
++------------------------------------------------------------------+
+|             DNS EGRESS EXCEPTION (CoreDNS)                        |
+|                                                                  |
+|  Problem: A default-deny-egress pod cannot resolve DNS because    |
+|  egress is blocked, even though the app talks to approved IPs.   |
+|                                                                  |
+|  Fix: add a NetworkPolicy allowing egress ONLY to kube-dns on UDP |
+|  53 (and optionally TCP 53), scoped to the kube-system            |
+|  namespace via namespaceSelector.                                |
+|                                                                  |
+|  +----------------------------------------------------------------+
+|  |  name: allow-dns                                              |
+|  |  namespaceSelector: {}                                        |
+|  |  spec:                                                       |
+|  |  podSelector: matchLabels: app=myapp                          |
+|  |  policyTypes: [Egress]                                       |
+|  |  egress:                                                      |
+|  |  - to:                                                       |
+|  |  - namespaceSelector:                                       |
+|  |  matchLabels: kubernetes.io/metadata.name=kube-system    |
+|  |  - podSelector: matchLabels:                            |
+|  |  k8s-app: kube-dns                                    |
+|  |  ports:                                                     |
+|  |  - protocol: UDP                                            |
+|  |  port: 53                                                  |
+|  |  - protocol: TCP                                            |
+|  |  port: 53                                                  |
+|  +----------------------------------------------------------------+
+|                                                                  |
+|  Note: namespaceSelector is matched against the namespace's       |
+|  LABELS (not name) unless you use the implicit                    |
+|  kubernetes.io/metadata.name label.                          |
++------------------------------------------------------------------+
+
+# Cross-Namespace + Pod Selector Logic
++------------------------------------------------------------------+
+|     NAMESPACE + POD SELECTOR INTERACTION                          |
+|                                                                  |
+|  +------------------+   +------------------+                      |
+|  |  namespace A     |   |  namespace B     |                      |
+|  |  name=frontend   |   |  name=backend    |                      |
+|  |  +-------------+ |   |  +-------------+ |                      |
+|  |  | Pod web     | |   |  | Pod api     | |                      |
+|  |  | app=web     | |   |  | app=api     | |                      |
+|  |  | tier=ui     | |   |  | tier=svc    | |                      |
+|  |  +-------------+ |   |  +-------------+ |                      |
+|  |  | Pod cache   | |   |                  |                      |
+|  |  | app=cache   | |   |                  |                      |
+|  |  +-------------+ |   |                  |                      |
+|  +------------------+   +------------------+                      |
+|                                                                  |
+|  Policy in namespace B targeting namespace A pods:                |
+|    podSelector: {app=web}         -> web pod in A                |
+|    namespaceSelector: {name=frontend} -> restricts to namespace A|
+|    => allows ingress/egress to web Pod in frontend namespace      |
+|                                                                  |
+|  Selector semantics:                                             |
+|  - podSelector alone => current namespace, matching pods          |
+|  - namespaceSelector alone => all pods in matching namespaces   |
+|  - both => intersection (pods in matching namespaces)            |
++------------------------------------------------------------------+

@@ -1,0 +1,21 @@
+# Module: 01 Fundamentals | Lesson: 02
+# A Namespace with resource quotas for isolation.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-a
+  labels:
+    environment: staging
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-resources
+  namespace: team-a
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    pods: "10"

@@ -1,0 +1,40 @@
+# Module: 02 Architecture | Lesson: 5
+# Node affinity + pod anti-affinity demonstrating spread across zones/nodes.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-zone
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: multi-zone
+  template:
+    metadata:
+      labels:
+        app: multi-zone
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - us-east-1a
+                - us-east-1b
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - multi-zone
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: app
+        image: nginx:alpine

@@ -1,0 +1,17 @@
+# Module: 13 Troubleshooting | Lesson: 41
+# An EventExporter rule and a Pod that uses an ephemeral container via kubectl debug.
+# This manifest ships an event-exporter sidecar; ephemeral containers are added at runtime.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: event-exporter-config
+  namespace: kube-logging
+data:
+  event-exporter.yaml: |
+    apiVersion: v1
+    kind: Config
+    logLevel: 0
+    logFilePath: ""
+    sink:
+    - type: http
+      url: http://event-aggregator:9999/api/v1/namespaces/default/events

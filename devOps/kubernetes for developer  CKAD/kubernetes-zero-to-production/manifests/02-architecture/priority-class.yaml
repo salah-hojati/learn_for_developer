@@ -1,0 +1,18 @@
+# Module: 02 Architecture | Lesson: 04
+# A custom PriorityClass. Higher value = scheduled sooner + preempts lower-priority Pods.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical-app
+value: 1000000
+globalDefault: false
+description: "Used for production-critical workloads that can preempt lower-priority Pods."
+---
+# Default PriorityClass for all workloads without an explicit one.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: standard
+value: 0
+globalDefault: true
+description: "Default priority; Pods at this level never preempt another Pod."
