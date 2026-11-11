@@ -112,6 +112,23 @@ evey day --> linux ,java 17 , jpa
 24 ejb  ok
 25 struts 1.3  ok
 26 jdbc ok
+27 jasper report  ok
+28 log4j
+
+29 java8
+30 java 11
+31 java 21
+32 java 25
+33 maven
+34 gradle
+35 netty
+
+14050820 -->  linux  java 17 , jpa
+22 uml  ok
+23 jsf  ok
+24 ejb
+25 struts 1.3
+26 jdbc
 27 jasper report
 28 log4j
 
@@ -122,3 +139,11 @@ evey day --> linux ,java 17 , jpa
 33 maven
 34 gradle
 35 netty
+
+36 oracle (database)
+37 weblogic
+38 mongodb
+39 neo4j
+40 spring boot
+41 php
+42 selenium

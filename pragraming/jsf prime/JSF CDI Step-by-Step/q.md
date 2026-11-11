@@ -52,6 +52,7 @@ Below are two Q&A sets per lesson: a **quick recall** question and a **deeper/sc
 **Q4.1 — Match each scope to its lifetime and a typical use case: `@RequestScoped`, `@ViewScoped`, `@SessionScoped`, `@ApplicationScoped`.**
 
 > **A:**
+> 
 > | Scope | Lifetime | Typical Use |
 > | :--- | :--- | :--- |
 > | `@RequestScoped` | One HTTP request | Stateless pages, simple non-AJAX forms |
@@ -70,6 +71,7 @@ Below are two Q&A sets per lesson: a **quick recall** question and a **deeper/sc
 **Q5.1 — Name four common JSF pitfalls and the fix for each.**
 
 > **A:**
+> 
 > | Pitfall | Fix |
 > | :--- | :--- |
 > | Business logic in the bean | Keep beans thin; move logic to a service layer injected with `@Inject` |
