@@ -158,8 +158,8 @@ evey day --> linux ,java 17 , jpa
 34 gradle  ok
 35 netty  ok
 
-36 oracle (database)
-37 weblogic
+36 oracle (database) ok
+37 weblogic ok
 38 mongodb
 39 neo4j
 40 spring boot
