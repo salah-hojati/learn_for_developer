@@ -187,7 +187,7 @@ evey day --> linux ,java 17 , jpa
 
 43 swt  ok
 44 Spring reactive ok
-45 vaadin
+45 vaadin ok
 46 cka
 47 jaxbe
 48 en
