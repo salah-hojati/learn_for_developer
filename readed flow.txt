@@ -181,11 +181,11 @@ evey day --> linux ,java 17 , jpa
 37 weblogic ok
 38 mongodb ok
 39 neo4j  ok
-40 spring boot
-41 php
-42 selenium
+40 spring boot ok
+41 php  ok
+42 selenium  ok
 
-43 swt
+43 swt  ok
 44 Spring reactive
 45 vaadin
 46 cka
