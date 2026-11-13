@@ -5,7 +5,7 @@
 ****************
 flow 2
 1. redis   + oop in java
-2. reacts
+2. reacts   + json
 3. docker
 4. linux
 5. java17
@@ -188,9 +188,9 @@ evey day --> linux ,java 17 , jpa
 43 swt  ok
 44 Spring reactive ok
 45 vaadin ok
-46 cka
-47 jaxbe
-48 en
+46 cka  ok
+47 jaxbe  ok
+48 en  ok
 49 java thread
 
 1. redis
