@@ -177,9 +177,9 @@ evey day --> linux ,java 17 , jpa
 
 36-49 1-7   fri
 
-36 oracle (database)
-37 weblogic
-38 mongodb
+36 oracle (database) ok
+37 weblogic ok
+38 mongodb ok
 39 neo4j
 40 spring boot
 41 php
