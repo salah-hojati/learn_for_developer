@@ -191,9 +191,9 @@ evey day --> linux ,java 17 , jpa
 46 cka  ok
 47 jaxbe  ok
 48 en  ok
-49 java thread
+49 java thread ok
 
-1. redis
+1. redis ok
 2. reacts
 3. docker
 4. linux
