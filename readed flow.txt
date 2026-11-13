@@ -160,6 +160,25 @@ evey day --> linux ,java 17 , jpa
 
 36 oracle (database) ok
 37 weblogic ok
+38 mongodb ok
+39 neo4j  ok
+40 spring boot  ok
+41 php
+42 selenium
+
+43 swt
+44 Spring reactive
+45 vaadin
+46 cka
+47 jaxbe
+48 en
+49 new
+
+
+36-49 1-7   fri
+
+36 oracle (database)
+37 weblogic
 38 mongodb
 39 neo4j
 40 spring boot
@@ -172,4 +191,12 @@ evey day --> linux ,java 17 , jpa
 46 cka
 47 jaxbe
 48 en
-49 new
+49 java thread
+
+1. redis
+2. reacts
+3. docker
+4. linux
+5. java17
+6. Jquery
+7. Regular Expression
