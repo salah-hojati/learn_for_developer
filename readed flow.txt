@@ -4,7 +4,7 @@
 
 ****************
 flow 2
-1. redis
+1. redis   + oop in java
 2. reacts
 3. docker
 4. linux
@@ -180,7 +180,7 @@ evey day --> linux ,java 17 , jpa
 36 oracle (database) ok
 37 weblogic ok
 38 mongodb ok
-39 neo4j
+39 neo4j  ok
 40 spring boot
 41 php
 42 selenium
