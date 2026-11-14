@@ -66,7 +66,7 @@ flow 2
 22-42   wen
 29-49
 36-49 1-7   fri
-42-49 1-14   sun
+42-49 1-14   sat
 
 
 evey day --> linux ,java 17 , jpa
@@ -200,3 +200,29 @@ evey day --> linux ,java 17 , jpa
 5. java17
 6. Jquery
 7. Regular Expression
+
+
+42-49 1-14   sat
+43 swt
+44 Spring reactive
+45 vaadin
+46 cka
+47 jaxbe
+48 en
+49 java thread
+1. redis   + oop in java
+2. reacts   + json
+3. docker
+4. linux
+5. java17
+6. Jquery
+7. Regular Expression
+
+8. html
+9. jpa
+10. python
+11 md
+12 spring security
+13 javascript
+14 css
+
