@@ -203,7 +203,7 @@ evey day --> linux ,java 17 , jpa
 
 
 42-49 1-14   sat
-43 swt
+43 swt  ok
 44 Spring reactive
 45 vaadin
 46 cka
