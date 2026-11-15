@@ -73,9 +73,9 @@ evey day --> linux ,java 17 , jpa
 14050809 --> linux  java 17 , jpa
 
 
-14050818 -->  linux  java 17 , jpa
-1. redis  ok
-2. reacts ok
+14050824 -->  linux  java 17 , jpa
+1. redis ok + oop in java ok
+2. reacts ok + json ok
 3. docker ok
 4. linux  ok
 5. java17
