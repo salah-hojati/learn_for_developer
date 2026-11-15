@@ -78,11 +78,11 @@ evey day --> linux ,java 17 , jpa
 2. reacts ok + json ok
 3. docker ok
 4. linux  ok
-5. java17
-6. Jquery
-7. Regular Expression
+5. java17  ok
+6. Jquery   ok
+7. Regular Expression  ok
 
-8. html
+8. html  ok
 9. jpa
 10. python
 11 md
