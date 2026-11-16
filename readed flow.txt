@@ -6,7 +6,7 @@
 flow 2
 1. redis   + oop in java
 2. reacts   + json
-3. docker
+3. docker  +JHipster
 4. linux
 5. java17
 6. Jquery
@@ -66,25 +66,25 @@ flow 2
 22-42   wen
 29-49
 36-49 1-7   fri
-42-49 1-14   sun
+42-49 1-14   sat
 
 
 evey day --> linux ,java 17 , jpa
 14050809 --> linux  java 17 , jpa
 
 
-14050818 -->  linux  java 17 , jpa
-1. redis  ok
-2. reacts ok
+14050824 -->  linux  java 17 , jpa
+1. redis ok + oop in java ok
+2. reacts ok + json ok
 3. docker ok
 4. linux  ok
-5. java17
-6. Jquery
-7. Regular Expression
+5. java17  ok
+6. Jquery   ok
+7. Regular Expression  ok
 
-8. html
-9. jpa
-10. python
+8. html  ok
+9. jpa ok
+10. python ok
 11 md
 12 spring security
 13 javascript
@@ -200,3 +200,29 @@ evey day --> linux ,java 17 , jpa
 5. java17
 6. Jquery
 7. Regular Expression
+
+
+42-49 1-14   sat
+43 swt  ok
+44 Spring reactive ok
+45 vaadin ok
+46 cka  ok
+47 jaxbe ok
+48 en  ok
+49 java thread ok
+1. redis   + oop in java
+2. reacts   + json
+3. docker
+4. linux
+5. java17
+6. Jquery
+7. Regular Expression
+
+8. html
+9. jpa
+10. python
+11 md
+12 spring security
+13 javascript
+14 css
+
