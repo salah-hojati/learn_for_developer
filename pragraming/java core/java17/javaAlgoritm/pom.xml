@@ -15,11 +15,13 @@
   </properties>
 
   <dependencies>
+
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark</artifactId>
+      <version>0.24.0</version>
+      <scope>system</scope>
+      <systemPath>src/commonmark-0.24.0.jar</systemPath>
     </dependency>
   </dependencies>
   <build>

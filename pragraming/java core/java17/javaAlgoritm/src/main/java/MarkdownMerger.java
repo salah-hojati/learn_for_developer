@@ -12,10 +12,10 @@ public class MarkdownMerger {
         // دریافت مسیر ورودی از کاربر
         try (var scanner = new java.util.Scanner(System.in)) {
             System.out.print("لطفاً مسیر پوشه حاوی فایل‌های md را وارد کنید: ");
-            String inputPathString ="C:\\Users\\salah1\\IdeaProjects\\learn_for_developer\\pragraming";
+            String inputPathString ="C:\\Users\\salah1\\IdeaProjects\\learn_for_developer\\pragraming\\java core";
             
             System.out.print("نام فایل خروجی را وارد کنید (مثلاً merged.md): ");
-            String outputFileName = "merged.md";
+            String outputFileName = "java core.md";
 
             Path inputPath = Paths.get(inputPathString);
             Path outputPath = Paths.get(outputFileName);
