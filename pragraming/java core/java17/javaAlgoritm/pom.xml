@@ -19,9 +19,14 @@
     <dependency>
       <groupId>org.commonmark</groupId>
       <artifactId>commonmark</artifactId>
-      <version>0.24.0</version>
-      <scope>system</scope>
-      <systemPath>src/commonmark-0.24.0.jar</systemPath>
+      <version>0.32.0</version>
+
+    </dependency>
+
+    <dependency>
+      <groupId>org.commonmark</groupId>
+      <artifactId>commonmark-ext-gfm-tables</artifactId>
+      <version>0.32.0</version>
     </dependency>
   </dependencies>
   <build>
