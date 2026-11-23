@@ -5,6 +5,14 @@
 
 <div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
+```mermaid
+flowchart TD
+    A["Order Service"] --> B["Payment Service"]
+    B --> C["Inventory Service"]
+    C --> D["Email Service"]
+    D --> E["Order Completed"]
+```
+
 **بخش ۱ — مبانی**
 1. Regex چیه و کجا به کار میاد
 2. کلاس‌های `Pattern` و `Matcher` در جاوا
