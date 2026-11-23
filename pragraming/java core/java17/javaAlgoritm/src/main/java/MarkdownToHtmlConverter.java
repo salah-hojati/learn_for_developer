@@ -18,7 +18,8 @@ public class MarkdownToHtmlConverter {
 
     public static void main(String[] args) {
 
-        String name="java core";
+       // String name="java core";
+        String name="broker";
         Path inputPath =Path.of(System.getProperty("user.dir")+ File.separator+name+
                 ".md");
         Path outputPath = outputPath = Path.of(System.getProperty("user.dir")+ File.separator+name+
