@@ -23,7 +23,7 @@ public class MarkdownToHtmlConverter {
     private static final String MERMAID_LOCAL_FILE = "mermaid.min.js";
 
     public static void main(String[] args) {
-        String defaultName = "java core";
+        String defaultName = "broker";
 
         Path inputPath  = Path.of(System.getProperty("user.dir"), defaultName + ".md");
         Path outputPath = Path.of(System.getProperty("user.dir"), defaultName + ".html");
