@@ -1,8 +1,5 @@
 <div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
-
-
-
 # نقشه راه یادگیری کامل Docker 🐳
 
 خوبه که اول امنیت setup فعلی رو تضمین کنیم، بعد شروع کنیم به یادگیری. بریم مرحله به مرحله.
@@ -12,7 +9,6 @@
 ## مرحله ۰: محافظت از چیزهای فعلی (خیلی مهم!)
 
 قبل از هر کاری، این کارها رو بکن تا compose های در حال اجرا آسیب نبینن:
-
 
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
@@ -34,7 +30,6 @@ find / -name "docker-compose.yml" -o -name "compose.yml" 2>/dev/null
 ```
 
 </div>
-
 
 
 **نکته کلیدی:** برای یادگیری یه **prefix جدا** استفاده کن. مثلاً همه container هایی که می‌سازی رو با `learn-` شروع کن:
@@ -59,8 +54,6 @@ find / -name "docker-compose.yml" -o -name "compose.yml" 2>/dev/null
 
 ### تمرین‌های عملی:
 
-
-
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
@@ -80,9 +73,7 @@ docker rm learn-ubuntu
 </div>
 
 
-
 ### دستورات ضروری که باید حفظ شی:
-
 
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
@@ -109,8 +100,6 @@ docker rmi <image>        # حذف image
 
 ### یه پروژه کوچیک بساز - مثلاً یه اپ Node یا Python:
 
-
-
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```dockerfile
@@ -131,7 +120,6 @@ CMD ["python", "app.py"]
 </div>
 
 
-
 ### چیزهایی که باید یاد بگیری:
 - `FROM`, `RUN`, `COPY`, `ADD`, `WORKDIR`, `ENV`, `EXPOSE`, `CMD`, `ENTRYPOINT`
 - تفاوت `CMD` و `ENTRYPOINT`
@@ -148,7 +136,6 @@ CMD ["python", "app.py"]
 
 ### Volume:
 
-
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
@@ -162,11 +149,9 @@ docker run -v $(pwd)/mydata:/data ubuntu ls /data
 
 </div>
 
-
 **تفاوت bind mount و named volume رو کامل بفهم** — این سوال مصاحبه‌ایه.
 
 ### Network:
-
 
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
@@ -187,7 +172,6 @@ docker run -it --network learn-net ubuntu bash
 ## مرحله ۴: Docker Compose (۱ هفته)
 
 ### یه stack واقعی بساز (جدا از stack فعلی):
-
 
 <div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
@@ -320,4 +304,11 @@ docker run --read-only --tmpfs /tmp myimage
 
 
 ---
+
+اگه بخوای، می‌تونم:
+1. یه **محیط تمرین ایزوله** کامل برات بسازم (شبکه + volume جدا)
+2. رو **موضوع خاصی** عمیق‌تر بشیم (مثلاً فقط شبکه)
+3. یه **پروژه واقعی** با هم بسازیم مرحله به مرحله
+
+کدوم رو می‌خوای شروع کنیم؟
 </div>
