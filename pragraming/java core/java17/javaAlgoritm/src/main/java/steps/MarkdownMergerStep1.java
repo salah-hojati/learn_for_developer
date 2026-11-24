@@ -2,17 +2,12 @@ package steps;
 
 import markdown.MarkdownToHtmlConverter;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,28 +16,35 @@ public class MarkdownMergerStep1 {
     public static void main(String[] args) {
         // دریافت مسیر ورودی از کاربر
         try (var scanner = new java.util.Scanner(System.in)) {
-            System.out.print("لطفاً مسیر پوشه حاوی فایل‌های md را وارد کنید: ");
-            String htmlName="step0";
-          ArrayList<String>  list=new ArrayList<>();
-
-            list.add(System.getProperty("user.dir")+File.separator+"db"+File.separator+"Elasticsearch"+File.separator+"0.Elasticsearch.md");
-            list.add(System.getProperty("user.dir")+File.separator+"devOps"+File.separator+"base"+File.separator+"docker"+File.separator+"5.docker.md");
+            String htmlName=args[0];
 
 
+            Properties props = new Properties();
+            try (var reader = new InputStreamReader(
+                    new FileInputStream(htmlName + ".properties"),
+                    StandardCharsets.UTF_8)) {
+                props.load(reader);
+            }
 
-            String outputFileName = htmlName+".md";
-
-            Set<Path> inputPath =  list.stream().map(s -> Paths.get(s)).collect(Collectors.toSet());
-            Path outputPath = Paths.get(outputFileName);
-
-
-
-            mergeMarkdownFiles(inputPath, outputPath);
-            MarkdownToHtmlConverter.convert(outputPath,Path.of(System.getProperty("user.dir")+ File.separator+htmlName + ".html"));
+          ArrayList<String>  step0=new ArrayList<>();
+            // step 0
+            props.forEach((o, o2) -> step0.add(o2.toString()));
+            generateHtml(htmlName, step0);
 
         } catch (Exception e) {
             System.err.println("خطایی رخ داد: " + e.getMessage());
         }
+    }
+
+    private static void generateHtml(String htmlName, ArrayList<String> step0) throws IOException {
+        String outputFileName = htmlName +".md";
+
+        Set<Path> inputPath =  step0.stream().map(s -> Paths.get(s)).collect(Collectors.toSet());
+        Path outputPath = Paths.get(outputFileName);
+
+
+        mergeMarkdownFiles(inputPath, outputPath);
+        MarkdownToHtmlConverter.convert(outputPath,Path.of(System.getProperty("user.dir")+ File.separator+ htmlName + ".html"));
     }
 
     /**
