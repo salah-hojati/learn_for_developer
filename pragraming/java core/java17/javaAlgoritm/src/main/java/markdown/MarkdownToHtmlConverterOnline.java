@@ -1,3 +1,5 @@
+package markdown;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,16 +19,12 @@ import org.commonmark.renderer.html.HtmlNodeRendererContext;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.html.HtmlWriter;
 
-public class MarkdownToHtmlConverter {
-
-    /** نام فایل JS محلی در ریشه پروژه */
-    private static final String MERMAID_LOCAL_FILE = "mermaid.min.js";
+public class MarkdownToHtmlConverterOnline {
 
     public static void main(String[] args) {
-        String defaultName = "doc";
+        String defaultName = "java core";
 
-      //  Path inputPath  = Path.of(System.getProperty("user.dir"), defaultName + ".md");
-        Path inputPath  = Path.of("/home/salah/IdeaProjects/Document/14050810_تحلیل و شناخت_PCRS_PC-Provider (1)/test.md");
+        Path inputPath  = Path.of(System.getProperty("user.dir"), defaultName + ".md");
         Path outputPath = Path.of(System.getProperty("user.dir"), defaultName + ".html");
 
         if (args.length >= 2) {
@@ -52,12 +50,14 @@ public class MarkdownToHtmlConverter {
 
         List<Extension> extensions = List.of(TablesExtension.create());
 
+        // Parser با افزونه جدول
         Parser parser = Parser.builder()
                 .extensions(extensions)
                 .build();
 
         Node document = parser.parse(markdownContent);
 
+        // Renderer با افزونه جدول + رندرر سفارشی Mermaid
         HtmlRenderer renderer = HtmlRenderer.builder()
                 .extensions(extensions)
                 .nodeRendererFactory(MermaidNodeRenderer::new)
@@ -66,47 +66,6 @@ public class MarkdownToHtmlConverter {
         String htmlBody = renderer.render(document);
 
         String title = inputPath.getFileName().toString().replaceFirst("\\.md$", "");
-
-        // ---- ساخت بلوک اسکریپت Mermaid ----
-        // اولویت: 1) فایل محلی کنار پروژه 2) کنار خود فایل md 3) CDN
-        Path localJs1 = Path.of(System.getProperty("user.dir"), MERMAID_LOCAL_FILE);
-        Path localJs2 = (inputPath.getParent() != null)
-                ? inputPath.getParent().resolve(MERMAID_LOCAL_FILE)
-                : null;
-
-        String mermaidScriptTag;
-        String mermaidJsContent = null;
-
-        if (Files.exists(localJs1)) {
-            mermaidJsContent = Files.readString(localJs1, StandardCharsets.UTF_8);
-            System.out.println("Mermaid JS از فایل محلی بارگذاری شد: " + localJs1.toAbsolutePath());
-        } else if (localJs2 != null && Files.exists(localJs2)) {
-            mermaidJsContent = Files.readString(localJs2, StandardCharsets.UTF_8);
-            System.out.println("Mermaid JS از فایل محلی بارگذاری شد: " + localJs2.toAbsolutePath());
-        }
-
-        if (mermaidJsContent != null) {
-            // جلوگیری از بستن ناخواسته تگ <script> داخل محتوای JS
-            String safeJs = mermaidJsContent.replace("</script>", "<\\/script>");
-            mermaidScriptTag = "<script>\n" + safeJs + "\n</script>";
-        } else {
-            System.err.println("⚠️  هشدار: فایل '" + MERMAID_LOCAL_FILE + "' پیدا نشد.");
-            System.err.println("    برای کار آفلاین، یکبار این فایل را دانلود کنید:");
-            System.err.println("    curl -L -o " + MERMAID_LOCAL_FILE
-                    + " https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js");
-            System.err.println("    فعلاً از CDN استفاده می‌شود (نیاز به اینترنت).");
-            mermaidScriptTag = "<script src=\"https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js\"></script>";
-        }
-
-        String initScript = """
-                <script>
-                    mermaid.initialize({
-                        startOnLoad: true,
-                        theme: 'default',
-                        securityLevel: 'loose'
-                    });
-                </script>
-                """;
 
         String fullHtml = """
                 <!DOCTYPE html>
@@ -126,8 +85,8 @@ public class MarkdownToHtmlConverter {
                             max-width: 900px;
                             margin: 40px auto;
                             padding: 0 24px 60px 24px;
-                            direction: ltr;
-                            text-align: left;
+                            direction: rtl;
+                            text-align: right;
                             font-family: 'B Nazanin', Tahoma, sans-serif;
                             font-size: 17px;
                             line-height: 1.9;
@@ -198,25 +157,23 @@ public class MarkdownToHtmlConverter {
                 %s
                 </div>
 
-                %s
-                %s
+                <!-- Mermaid.js برای رندر کردن دیاگرام‌ها -->
+                    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+                <script>
+                    mermaid.initialize({
+                        startOnLoad: true,
+                        theme: 'default',
+                        securityLevel: 'loose'
+                    });
+                </script>
                 </body>
                 </html>
-                """.formatted(
-                escapeHtmlTitle(title),
-                htmlBody,
-                mermaidScriptTag,
-                initScript
-        );
+                """.formatted(escapeHtmlTitle(title), htmlBody);
 
         if (outputPath.getParent() != null) {
             Files.createDirectories(outputPath.getParent());
         }
         Files.writeString(outputPath, fullHtml, StandardCharsets.UTF_8);
-
-        if (mermaidJsContent != null) {
-            System.out.println("✅ خروجی HTML کاملاً آفلاین است (Mermaid درون فایل جاسازی شد).");
-        }
     }
 
     private static String escapeHtmlTitle(String title) {
@@ -226,6 +183,11 @@ public class MarkdownToHtmlConverter {
                     .replace("\"", "&quot;");
     }
 
+    /**
+     * رندرر سفارشی برای FencedCodeBlock:
+     *  - اگر info string با mermaid شروع شود → <div class="mermaid">...</div>
+     *  - در غیر این صورت → <pre><code class="language-xxx">...</code></pre>
+     */
     public static class MermaidNodeRenderer implements NodeRenderer {
 
         private final HtmlWriter html;

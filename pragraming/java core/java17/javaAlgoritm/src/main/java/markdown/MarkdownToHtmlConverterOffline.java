@@ -1,11 +1,4 @@
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+package markdown;
 
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
@@ -17,7 +10,16 @@ import org.commonmark.renderer.html.HtmlNodeRendererContext;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.html.HtmlWriter;
 
-public class MarkdownToHtmlConverterOnline {
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class MarkdownToHtmlConverterOffline {
 
     public static void main(String[] args) {
         String defaultName = "java core";
@@ -156,7 +158,7 @@ public class MarkdownToHtmlConverterOnline {
                 </div>
 
                 <!-- Mermaid.js برای رندر کردن دیاگرام‌ها -->
-                    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+                 <script src="mermaid.min.js">
                 <script>
                     mermaid.initialize({
                         startOnLoad: true,
