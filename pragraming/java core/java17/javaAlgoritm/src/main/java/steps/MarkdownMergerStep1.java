@@ -9,7 +9,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,19 +23,19 @@ public class MarkdownMergerStep1 {
         try (var scanner = new java.util.Scanner(System.in)) {
             System.out.print("لطفاً مسیر پوشه حاوی فایل‌های md را وارد کنید: ");
             String htmlName="step0";
-            String inputPathString =System.getProperty("user.dir")+File.separator+"steps"+File.separator+"step0";
+          ArrayList<String>  list=new ArrayList<>();
+
+            list.add(System.getProperty("user.dir")+File.separator+"db"+File.separator+"Elasticsearch"+File.separator+"0.Elasticsearch.md");
+            list.add(System.getProperty("user.dir")+File.separator+"devOps"+File.separator+"base"+File.separator+"docker"+File.separator+"5.docker.md");
 
 
 
-            String outputFileName = "m.md";
+            String outputFileName = htmlName+".md";
 
-            Path inputPath = Paths.get(inputPathString);
+            Set<Path> inputPath =  list.stream().map(s -> Paths.get(s)).collect(Collectors.toSet());
             Path outputPath = Paths.get(outputFileName);
 
-            if (!Files.exists(inputPath) || !Files.isDirectory(inputPath)) {
-                System.err.println("خطا: مسیر وارد شده معتبر نیست یا یک پوشه نیست.");
-                return;
-            }
+
 
             mergeMarkdownFiles(inputPath, outputPath);
             MarkdownToHtmlConverter.convert(outputPath,Path.of(System.getProperty("user.dir")+ File.separator+htmlName + ".html"));
@@ -45,25 +48,29 @@ public class MarkdownMergerStep1 {
     /**
      * متد اصلی برای جستجو و ادغام فایل‌ها
      */
-    public static void mergeMarkdownFiles(Path sourceDir, Path outputFile) throws IOException {
-        System.out.println("در حال جستجو در مسیر: " + sourceDir.toAbsolutePath());
+    public static void mergeMarkdownFiles(Set<Path> sourceDirs, Path outputFile) throws IOException {
+        //System.out.println("در حال جستجو در مسیر: " + sourceDir.toAbsolutePath());
+        List<Path> mdFiles=new ArrayList<>();
+        for (Path sourceDir : sourceDirs) {
+            try (Stream<Path> walk = Files.walk(sourceDir)) {
 
-        // استفاده از Files.walk برای پیمایش تمام زیرپوشه‌ها
-        try (Stream<Path> walk = Files.walk(sourceDir)) {
-            
-            // پیدا کردن تمام فایل‌هایی که پسوند .md دارند
-            List<Path> mdFiles = walk
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().toLowerCase().endsWith(".md"))
-                    .sorted() // مرتب‌سازی بر اساس نام برای نظم بیشتر
-                    .collect(Collectors.toList());
+                // پیدا کردن تمام فایل‌هایی که پسوند .md دارند
 
-            if (mdFiles.isEmpty()) {
-                System.out.println("هیچ فایل .md پیدا نشد.");
-                return;
+            mdFiles.addAll( walk
+                        .filter(Files::isRegularFile)
+                        .filter(path -> path.toString().toLowerCase().endsWith(".md"))
+                        .sorted() // مرتب‌سازی بر اساس نام برای نظم بیشتر
+                        .collect(Collectors.toList()));
+
+                if (mdFiles.isEmpty()) {
+                    System.out.println("هیچ فایل .md پیدا نشد.");
+                    return;
+                }
+
+                System.out.println("تعداد فایل‌های یافت شده: " + mdFiles.size());
             }
-
-            System.out.println("تعداد فایل‌های یافت شده: " + mdFiles.size());
+        }
+        // استفاده از Files.walk برای پیمایش تمام زیرپوشه‌ها
 
             // ایجاد یا باز کردن فایل خروجی برای نوشتن
             try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
@@ -79,7 +86,7 @@ public class MarkdownMergerStep1 {
 
             System.out.println("عملیات با موفقیت انجام شد!");
             System.out.println("فایل نهایی در اینجا ذخیره شد: " + outputFile.toAbsolutePath());
-        }
+
     }
 
     /**
