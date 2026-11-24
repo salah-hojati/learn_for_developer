@@ -1,4 +1,5 @@
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,9 +15,9 @@ public class MarkdownMergerDevops {
         // دریافت مسیر ورودی از کاربر
         try (var scanner = new java.util.Scanner(System.in)) {
             System.out.print("لطفاً مسیر پوشه حاوی فایل‌های md را وارد کنید: ");
-            String inputPathString ="C:\\Users\\salah1\\IdeaProjects\\learn_for_developer\\devOps";
+            String inputPathString =System.getProperty("user.dir")+File.separator+"devOps";
 
-            System.out.print("نام فایل خروجی را وارد کنید (مثلاً merged.md): ");
+
 
             String outputFileName = "devOps.md";
 
@@ -29,6 +30,7 @@ public class MarkdownMergerDevops {
             }
 
             mergeMarkdownFiles(inputPath, outputPath);
+            MarkdownToHtmlConverter.convert(outputPath,Path.of(System.getProperty("user.dir")+ File.separator+"devOps.html"));
 
         } catch (Exception e) {
             System.err.println("خطایی رخ داد: " + e.getMessage());

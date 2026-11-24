@@ -126,8 +126,8 @@ public class MarkdownToHtmlConverter {
                             max-width: 900px;
                             margin: 40px auto;
                             padding: 0 24px 60px 24px;
-                            direction: rtl;
-                            text-align: right;
+                            direction: ltr;
+                            text-align: left;
                             font-family: 'B Nazanin', Tahoma, sans-serif;
                             font-size: 17px;
                             line-height: 1.9;
