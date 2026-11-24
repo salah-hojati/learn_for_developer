@@ -1,6 +1,8 @@
 <div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 
+
+
 # نقشه راه یادگیری کامل Docker 🐳
 
 خوبه که اول امنیت setup فعلی رو تضمین کنیم، بعد شروع کنیم به یادگیری. بریم مرحله به مرحله.
@@ -10,7 +12,9 @@
 ## مرحله ۰: محافظت از چیزهای فعلی (خیلی مهم!)
 
 قبل از هر کاری، این کارها رو بکن تا compose های در حال اجرا آسیب نبینن:
-</div>
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
 # 1. لیست container های در حال اجرا
@@ -29,7 +33,10 @@ docker network ls
 find / -name "docker-compose.yml" -o -name "compose.yml" 2>/dev/null
 ```
 
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+</div>
+
+
+
 **نکته کلیدی:** برای یادگیری یه **prefix جدا** استفاده کن. مثلاً همه container هایی که می‌سازی رو با `learn-` شروع کن:
 - `learn-nginx`, `learn-postgres`, `learn-node`
 - اینطوری هیچ‌وقت با setup اصلی قاطی نمی‌شن
@@ -52,7 +59,9 @@ find / -name "docker-compose.yml" -o -name "compose.yml" 2>/dev/null
 
 ### تمرین‌های عملی:
 
-</div>
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
 # شروع ساده - hello world
@@ -67,10 +76,15 @@ docker start -ai learn-ubuntu
 # پاک کردن تمیز
 docker rm learn-ubuntu
 ```
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+</div>
+
+
 
 ### دستورات ضروری که باید حفظ شی:
-</div>
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
 docker ps -a              # همه container ها
@@ -83,7 +97,10 @@ docker stop/start/restart <name>
 docker rm <name>          # حذف container
 docker rmi <image>        # حذف image
 ```
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+</div>
+
+
 **منبع پیشنهادی:** [play-with-docker.com](https://labs.play-with-docker.com/) — بدون دست زدن به سیستم خودت تمرین کن.
 
 ---
@@ -91,8 +108,10 @@ docker rmi <image>        # حذف image
 ## مرحله ۲: Dockerfile نویسی (۱-۲ هفته)
 
 ### یه پروژه کوچیک بساز - مثلاً یه اپ Node یا Python:
-</div>
 
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```dockerfile
 # نمونه Dockerfile برای Python
@@ -108,7 +127,10 @@ COPY . .
 EXPOSE 8000
 CMD ["python", "app.py"]
 ```
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+</div>
+
+
 
 ### چیزهایی که باید یاد بگیری:
 - `FROM`, `RUN`, `COPY`, `ADD`, `WORKDIR`, `ENV`, `EXPOSE`, `CMD`, `ENTRYPOINT`
@@ -125,7 +147,9 @@ CMD ["python", "app.py"]
 ## مرحله ۳: Volume و Network (۱ هفته)
 
 ### Volume:
-</div>
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
 # named volume
@@ -135,11 +159,16 @@ docker run -v learn-data:/data ubuntu touch /data/test.txt
 # bind mount
 docker run -v $(pwd)/mydata:/data ubuntu ls /data
 ```
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+</div>
+
+
 **تفاوت bind mount و named volume رو کامل بفهم** — این سوال مصاحبه‌ایه.
 
 ### Network:
-</div>
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```bash
 docker network create learn-net
@@ -147,7 +176,10 @@ docker run -d --name learn-db --network learn-net postgres:15
 docker run -it --network learn-net ubuntu bash
 # داخلش: ping learn-db  ← اینجوری با اسم resolve می‌شه
 ```
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+</div>
+
+
 انواع network: `bridge`, `host`, `none`, `overlay` — هر کدوم کجا استفاده می‌شن؟
 
 ---
@@ -155,7 +187,9 @@ docker run -it --network learn-net ubuntu bash
 ## مرحله ۴: Docker Compose (۱ هفته)
 
 ### یه stack واقعی بساز (جدا از stack فعلی):
-</div>
+
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
 
 ```yaml
 # learn-compose/docker-compose.yml
@@ -186,7 +220,10 @@ volumes:
 networks:
   learn-net:
 ```
-<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+</div>
+
+
 **نکته امنیتی برای setup فعلی‌ت:**
 - اسم project رو با `-p learn` مشخص کن: `docker compose -p learn up -d`
 - اینطوری container ها و network هاش جدا می‌شن از اونایی که داری
@@ -214,6 +251,9 @@ networks:
 | **Logging drivers** | ارسال لاگ به جاهای مختلف |
 
 ### امنیت - چک‌لیست حرفه‌ای:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 ```dockerfile
 # کاربر غیر root
 RUN useradd -m appuser
@@ -222,6 +262,9 @@ USER appuser
 # فایل سیستم read-only
 docker run --read-only --tmpfs /tmp myimage
 ```
+
+</div>
+
 
 ---
 
@@ -263,6 +306,8 @@ docker run --read-only --tmpfs /tmp myimage
 
 ## چک‌لیست سریع قبل از هر تمرین
 
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
 ```
 □ setup اصلی رو با docker ps -a چک کن و بکاپ بگیر
 □ همه اسامی رو با learn- شروع کن  
@@ -271,4 +316,8 @@ docker run --read-only --tmpfs /tmp myimage
 □ بعد تمرین، فقط چیزهای learn- رو پاک کن
 ```
 
+</div>
+
+
 ---
+</div>
