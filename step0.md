@@ -1,0 +1,1861 @@
+
+
+<!-- SOURCE: 1.md -->
+# File: 1.md
+
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+
+
+# **Data Structureهای Redis و کاربرد هرکدام**
+
+Redis یک **In-Memory Data Store** است که اطلاعات را با ساختارهای داده مختلف نگهداری می‌کند. برخلاف تصور رایج، Redis فقط یک Key-Value ساده نیست؛ هر Key می‌تواند Value از نوع String، Hash، List، Set، Sorted Set، Stream و انواع تخصصی‌تر داشته باشد.
+
+انتخاب Data Structure مناسب در Redis مستقیماً روی Performance، Memory Consumption و پیچیدگی برنامه تأثیر می‌گذارد.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://redis.io\&sz=32)
+
+Docs
+
+
+
+## **1. انواع اصلی Redis Data Structures**
+
+[Estruturas de dados | Redis](https://images.openai.com/static-rsc-4/ONDfzf3qKnKOV52KCZIywb4edY7-nW2zwqXTWf92GaEaoWrDP1nNhamVKeePxCuxWuyKxw2bxI23SxRNA3wlwYLiEfXS9Gnz1iyOALCWotx9gIuElVss8MoO-IlT5-zWyPg0fWuofHQDpKAhoxrattYFQ9a9Z69EcJvHXv-m41k?purpose=inline)
+
+**String**
+
+Cache، Token، Counter
+
+[redis - Engineering Blog](https://images.openai.com/static-rsc-4/m2BhKWA0tGJfCDLRJaBUgpdNP9tmevkS6ZLFscEcWiHkw0yikjcsHscgCCagxidLbl9aPu4z-hiooW4zsv41m40zjH1spqSjSJauYLFgKnkkePYD5S4c8iZlrNGvXfYsVSEMNAGponRdGh4Hsc5VB8QtakUwNFjCssF32L016mc?purpose=inline)
+
+**Hash**
+
+نگهداری Object و User Profile
+
+[Redis List](https://images.openai.com/static-rsc-4/Y2Vd60mdZGc_GTHa3GmWfMMa2JHjxSQjH4DIwdy4dhROmaCkg60GHOkrq4w7R5JQjgqjRdHSq65pov7i9qfLAbOE1zA4G6Rj-Rq1FmLl7FvggEEoiv9wt85gE9mCWx9qTVqRTuHLFLMoM6ZmRAfIDa8ysUiyl9yH9S4bN-kfk2U?purpose=inline)
+
+**List**
+
+Queue و Buffer
+
+[7 Redis Data Types: Commands & Data Structures Guide 2024](https://images.openai.com/static-rsc-4/JTPYH1tJ1bH1k6R-JaJepWJ4eWAAbBjUzWkuZl08jeIIQNx-f_kfVo0Rm3D4Y6yKVgM7dRCjXoiaDZtsY7aqkKS77wIP6Ffx9jT1gsCTIy9YBEwKdsp-iZLqQfKsTHFAcGRwg646ldMpprwReuKkc2nfi690_PhdIYb7dWpftyw?purpose=inline)
+
+**Set**
+
+Unique values و membership
+
+[Redis is great](https://images.openai.com/static-rsc-4/rKKtgs-hTe0WN6bJnYPzNygxPfVgmtCuxSLJFmRW_a1lWrQQr4Py9duBKSFJQcSnm4_FCS99qqKJu6bw4oWZ_0PzONpEAIlWcnmqG_chSbc6VyB_0jys9AYLtgwTYTmdFFioMjUhhRL1zJgRIOa7acoHg1Hry5fLCwTYkGO9Nrw?purpose=inline)
+
+**Sorted Set**
+
+Ranking، Leaderboard
+
+[Mastering Redis Streams: From Basics to Advanced Usage](https://images.openai.com/static-rsc-4/36BbRfhxSaxHi3q_GyozCEIMaHTvVidPPEyALN8C-uXFXXrLf4zZFPZROqEa18Ox6dbMrEdW3mQntP5Axd5TokFvaU0Iqxk-txY3PNLGJ_NhUZmkOWe_rYKXFvXEkrJtz1-6sHoSdJRx7umO62DW0YJAHL0aUIYpes7rXvIp6gA?purpose=inline)
+
+**Stream**
+
+Event processing و Messaging
+
+# **2. String**
+
+String ساده‌ترین و پرکاربردترین Data Structure در Redis است.
+
+Redis String می‌تواند String معمولی، عدد، JSON، Token یا حتی داده Binary را نگهداری کند.
+
+### **دستورات**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SET user:1001:name "Ali"
+GET user:1001:name
+```
+
+</div>
+
+
+خروجی:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+"Ali"
+```
+
+</div>
+
+
+### **استفاده برای Cache**
+
+فرض کن اطلاعات یک User را از Oracle دریافت می‌کنیم و می‌خواهیم برای درخواست‌های بعدی در Redis Cache کنیم.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SET user:1001 '{"id":1001,"name":"Ali","age":30}' EX 300
+```
+
+</div>
+
+
+`EX 300` یعنی این Key بعد از 300 ثانیه Expire شود.
+
+در Java با Spring Boot معمولاً چنین چیزی از طریق `RedisTemplate` یا Spring Cache پیاده‌سازی می‌شود.
+
+### **Counter**
+
+Redis String عملیات Atomic برای افزایش و کاهش دارد.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SET page:views 100
+INCR page:views
+INCRBY page:views 10
+DECR page:views
+```
+
+</div>
+
+
+این عملیات برای مواردی مثل:
+
+- تعداد بازدید
+- تعداد Login
+- تعداد درخواست
+- Rate Limiting
+
+مناسب است.
+
+نکته مصاحبه:
+
+`INCR` یک عملیات Atomic است؛ بنابراین برای Counterهای ساده، برخلاف این الگو در Java که `GET` و سپس `SET` جداگانه انجام شود، خطر Lost Update در همان عملیات افزایش وجود ندارد.
+
+# **3. Hash**
+
+Hash برای نگهداری مجموعه‌ای از Field/Valueها در یک Key استفاده می‌شود.
+
+در واقع مشابه یک `Map<String, String>` در Java.
+
+[Architectures of Large Scalable Systems — Part 3: Redis | by M. Esat Ceber | Medium](https://images.openai.com/static-rsc-4/5e6eZEIxUTz1iE2y9-Og-DlqdoUBbWp_o3tqwMKbU4YcaAR9YHYA-TNmL-bIBkSanJ-HXZgp_Xk4PH_vo2doU1OcvGF-7Z_-z53VtQtzW-B6gj5uuV6dNl92HCnL5t8hvg8viK0sghnutjz_JycwEEioZdTJFYv4TF2gMU-wDsQ?purpose=inline)
+
+### **مثال**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+HSET user:1001 name Ali age 30 email ali@example.com
+```
+
+</div>
+
+
+خواندن یک Field:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+HGET user:1001 name
+```
+
+</div>
+
+
+خواندن همه Fieldها:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+HGETALL user:1001
+```
+
+</div>
+
+
+تغییر فقط یک Field:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+HSET user:1001 age 31
+```
+
+</div>
+
+
+### **کاربرد**
+
+- User Profile
+- Product Information
+- تنظیمات کاربر
+- Session data
+- Objectهای ساده
+
+### **String یا Hash؟**
+
+| String                     | Hash                         |
+| -------------------------- | ---------------------------- |
+| کل Object به‌صورت یک مقدار | Object به‌صورت Fieldهای جدا  |
+| مناسب JSON کامل            | مناسب تغییر فیلد مستقل       |
+| خواندن و نوشتن کل Value    | امکان خواندن/تغییر Field خاص |
+| `GET/SET`                  | `HGET/HSET`                  |
+
+مثلاً اگر فقط Age تغییر کند، در Hash می‌توان فقط Age را تغییر داد، بدون اینکه کل JSON را مجدداً بنویسیم.
+
+البته String حاوی JSON نیز می‌تواند انتخاب مناسبی باشد؛ تصمیم به نحوه دسترسی و تغییر داده بستگی دارد.
+
+# **4. List**
+
+Redis List یک لیست مرتب از Stringها است که ترتیب ورود عناصر را حفظ می‌کند و امکان درج و حذف از دو سمت را دارد.
+
+[Demystifying Redis Messaging. Redis is well-known as a Cache. But it… | by Tarunannapareddy | Medium](https://images.openai.com/static-rsc-4/li8kB0o-27IHdAXUcxXOTSJ5FI4N_MJJdaZ3fKDW2xPmB3NXaCXd5o7j9j5mGgKgCeCTLF7VtgB7ucRCSSNGiaOTxTG-VLvaeD50ESU3cUHlW6nY1Ojchthm2KNdfjvtN1XjDRZUpPCrB-mVLA0O4NZ5NpL1NE6foT433888_X8?purpose=inline)
+
+[Beyond the Cache with Python | Redis](https://images.openai.com/static-rsc-4/HtB-dIvBiKgkq379Xx9ZW8FmP3NhLQQRw94yuVeTcASv1hJy7XOMuU8G5qcXWBA92YQ024zpgIvPhtALeqpA6zE8ai91HMQ2rBuZZn6aV9A3nXjHjaiT17pyQoMIqwkvFo-bQEItPEQI0UINjqK4Y9lOKtJ_QC9HRJ_yr5lAurs?purpose=inline)
+
+### **دستورات**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+LPUSH queue:orders order1 order2
+RPUSH queue:orders order3
+```
+
+</div>
+
+
+خواندن:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+LRANGE queue:orders 0 -1
+```
+
+</div>
+
+
+خروجی:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+1) "order2"
+2) "order1"
+3) "order3"
+```
+
+</div>
+
+
+حذف از ابتدا:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+LPOP queue:orders
+```
+
+</div>
+
+
+حذف از انتها:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+RPOP queue:orders
+```
+
+</div>
+
+
+### **کاربرد List**
+
+- Queue ساده
+- Task Queue
+- آخرین فعالیت‌های کاربر
+- نگهداری Recent Items
+- Buffer
+
+### **Queue با List**
+
+برای FIFO (First In First Out):
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+LPUSH jobs job1
+LPUSH jobs job2
+LPUSH jobs job3
+
+RPOP jobs
+```
+
+</div>
+
+
+خروجی:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+job1
+```
+
+</div>
+
+
+در سیستم‌های واقعی، برای Queueهای قابل اطمینان بهتر است به‌جای List ساده، از قابلیت‌هایی مانند `BLMOVE`، `LMOVE` یا Redis Streams استفاده کنیم؛ چون List ساده به‌تنهایی قابلیت کامل Ack و مدیریت پیام پردازش‌شده را ندارد.
+
+# **5. Set**
+
+Set مجموعه‌ای از عناصر String است که:
+
+- ترتیب مشخصی ندارد.
+- عناصر تکراری را قبول نمی‌کند.
+- بررسی عضویت بسیار سریع انجام می‌دهد.
+
+[redis基本数据类型 set类型 - 高佳丰 - 博客园](https://images.openai.com/static-rsc-4/W8BuZY1mon0IzaIEy1QupgbaLbohJOpe9h8LNbo6Q5voBzP2NicEFlYN0rzFMBaer4ZSt1lqOZ6b5NOM3sKuMYUhmtGZebKaitrYLkEZcCYfjgViAASFHfgn7yuZoZxyBTd_wd-YNlSBSyDRo1JDjrIu3FrN2oprqCiAhj4DaPc?purpose=inline)
+
+### **مثال**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SADD user:1001:roles ADMIN USER
+SADD user:1001:roles USER
+```
+
+</div>
+
+
+در اینجا `USER` فقط یک بار ذخیره می‌شود.
+
+بررسی عضویت:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SISMEMBER user:1001:roles ADMIN
+```
+
+</div>
+
+
+دریافت همه اعضا:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SMEMBERS user:1001:roles
+```
+
+</div>
+
+
+### **عملیات Set**
+
+فرض کن دو User، دو مجموعه از Skillها دارند.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SADD user:1:skills Java SQL Redis
+SADD user:2:skills Java Python Redis
+```
+
+</div>
+
+
+Skill مشترک:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SINTER user:1:skills user:2:skills
+```
+
+</div>
+
+
+نتیجه:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+Java
+Redis
+```
+
+</div>
+
+
+Union:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SUNION user:1:skills user:2:skills
+```
+
+</div>
+
+
+### **کاربرد**
+
+- Role و Permission
+- Tagهای یک محصول
+- کاربران Online
+- Unique visitor IDs (در برخی سناریوها)
+- عضویت در Group
+- تشخیص عضویت سریع
+
+# **6. Sorted Set (ZSET)**
+
+یکی از مهم‌ترین Data Structureهای Redis.
+
+Sorted Set شبیه Set است، با این تفاوت که هر Member یک Score دارد و Redis اعضا را بر اساس Score مرتب می‌کند.
+
+[Redis is great](https://images.openai.com/static-rsc-4/rKKtgs-hTe0WN6bJnYPzNygxPfVgmtCuxSLJFmRW_a1lWrQQr4Py9duBKSFJQcSnm4_FCS99qqKJu6bw4oWZ_0PzONpEAIlWcnmqG_chSbc6VyB_0jys9AYLtgwTYTmdFFioMjUhhRL1zJgRIOa7acoHg1Hry5fLCwTYkGO9Nrw?purpose=inline)
+
+[7 Redis Data Types: Commands & Data Structures Guide 2024](https://images.openai.com/static-rsc-4/-RUKRx3VcCJmH89H_nFrZnMJWOQKJTmflIOnOeJle7aN-JKaK1SXkmbav61swAhcJCPBpfDIYi85Lo0Zjh7c08pogFPbl_VKFUczhfh0JiYYOHbNBUBYM1F-s8Ytr7ujqEEw-K5twOMPiiaVa8dxtCUYfQbr66WobO0vpc-14xU?purpose=inline)
+
+[Redis Sorted Sets (with Spring) | I Think So!](https://images.openai.com/static-rsc-4/JquGMFMnVQXqckwDX0-V9L1H8zDLcmZkcRkLiZozkko7SZURMF5-7nTietABlKvixO6GRcWKoTD5YwlEge1jR41g0LO_rIfwZZHN8RhGn1icFA7N-tPMGyTJD5xXPSyvC3SGm8BmHuqAdmRgxm_BkMALYU4V9y2XXFezJRQPVPg?purpose=inline)
+
+[The 6 Most Impactful Ways Redis is Used in Production Systems](https://images.openai.com/static-rsc-4/_nA4RSuzwmEy7FDiD39YipZD7Wph64w8jnwFCaVIxfK92KnvWODhTDe4SBlZCO4ZzvDDkkMZzjLl_uyBl05lFX91sRuHbWZ7LUXDVq_ft6kQrRxgMsB3rB5Fzxx5AkSScFGF4aDmslK8ZhuIiC36nZpa1b2m47g7Aad5xa9hpK0?purpose=inline)
+
+[Redis Sorted Sets Explained. Try to understand Sorted Sets with a… | by Dunith Danushka | Analytics Vidhya | Medium](https://images.openai.com/static-rsc-4/EgoCsM6HiIamF8vWXhn9vLxdOH_eALGIVhmPdi_EEZF5ycqeeYYLFFoCcnhkC0VJrS4B6BdPUHdInQCwaOMvBaDR-VJopmxNeyJI5CoePSTZFWZzrumNzZFrVYiHTVICMDz0L-Ni_unixYGiW09Y__8gzJrOmOO8lnzGBI3o6rk?purpose=inline)
+
+[Leaderboard System Design - System Design](https://images.openai.com/static-rsc-4/Sw2JFILxrHNXX_rAf8MoHKARggykPxkXfuCXc-LAi6z5J9_Xj1LRSvnX9rhgE6zPMHOSU2aMWruFiC8Nx5WpLRneOxkUL9kzuDHB4S123B4GzUAmhRkGbkL8rCq4qBJiTl72l1zUdldUa1d6MrQnPzWvqG8qkubsxzBqqIsgt-A?purpose=inline)
+
+ساختار:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+Member        Score
+Ali           100
+Reza          250
+Sara          180
+```
+
+</div>
+
+
+### **ایجاد**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZADD leaderboard 100 Ali
+ZADD leaderboard 250 Reza
+ZADD leaderboard 180 Sara
+```
+
+</div>
+
+
+خواندن به ترتیب Score صعودی:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZRANGE leaderboard 0 -1 WITHSCORES
+```
+
+</div>
+
+
+رتبه‌های بالاتر:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZREVRANGE leaderboard 0 2 WITHSCORES
+```
+
+</div>
+
+
+افزایش امتیاز:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZINCRBY leaderboard 50 Ali
+```
+
+</div>
+
+
+### **کاربردهای مهم**
+
+- Leaderboard بازی
+- رتبه‌بندی کاربران
+- Priority Queue
+- Scheduled Jobs
+- نمایش Top N
+- مدیریت امتیاز
+- نگهداری آیتم‌ها با Score زمانی
+
+### **مثال واقعی: Leaderboard**
+
+فرض کن امتیاز کاربران بازی:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZADD game:ranking 1200 Ali
+ZADD game:ranking 950 Reza
+ZADD game:ranking 1800 Sara
+```
+
+</div>
+
+
+Top 3:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZREVRANGE game:ranking 0 2 WITHSCORES
+```
+
+</div>
+
+
+نتیجه از بالاترین امتیاز به پایین‌ترین خواهد بود.
+
+نکته مصاحبه:
+
+اگر بخواهی Top 10 User را مرتب‌شده دریافت کنی، Sorted Set بسیار مناسب‌تر از این است که تمام کاربران را از دیتابیس بگیری و در Java مرتب‌سازی کنی.
+
+# **7. Stream**
+
+Redis Stream یک Data Structure برای ثبت Eventها به شکل یک Log است. برخلاف List ساده، امکانات مناسب‌تری برای پردازش پیام و Consumerها دارد.
+
+[The 6 Most Impactful Ways Redis is Used in Production Systems](https://images.openai.com/static-rsc-4/MKT5_w6vMuegl-RYBxaiXQhZQsTmFgSoy-YQQINCFNSUU10rAX2i22m5a-Jz_6qgd0Qz3hQ2OmKtY_wwUmHaLDp26hjM87kpR2IEdniy4pt29ROicPEy1D8wMJ6KABe71Ea77XOd76jb-M9kBEdKH9biI1_gobg8DnDTl9QQx6U?purpose=inline)
+
+[🚀 Redis Streams: The Modern, Lightweight, Real‑Time Data Pipeline You Should Know About](https://images.openai.com/static-rsc-4/UuRxXxiK6WljP79iGHuQY85GFE20W4onW9iuUmuCm3WwEJMXw-AGNbxqEbqdMovJ1PUFs88bw2q7Z7wfa85Icco4DsG8wgQOa-wCu228fBdUxpVhvMFVRAPKFnp46KrxRAOxBexxPN9tCoEZlaPAIupHjNr0GLDpFqOncMtkauM?purpose=inline)
+
+[Mastering Redis Streams: From Basics to Advanced Usage](https://images.openai.com/static-rsc-4/36BbRfhxSaxHi3q_GyozCEIMaHTvVidPPEyALN8C-uXFXXrLf4zZFPZROqEa18Ox6dbMrEdW3mQntP5Axd5TokFvaU0Iqxk-txY3PNLGJ_NhUZmkOWe_rYKXFvXEkrJtz1-6sHoSdJRx7umO62DW0YJAHL0aUIYpes7rXvIp6gA?purpose=inline)
+
+[Demystifying Redis Messaging. Redis is well-known as a Cache. But it… | by Tarunannapareddy | Medium](https://images.openai.com/static-rsc-4/2x8MJbY2RCPs__NbB9uRPnapWg1hkHJWu-K7AXL2kPWjhuhFFoNgW7f0qDJ-xaHgZ-OAUeyJeUX6Qfj5rXkNkzNr9iJj_4AmxxWDY-vzDUbeMhFyiDGfeRxoV25VdQWp7W1X1n0CbQUHMCKmVr-Tx6ha-BvNxP9y6Te7l-l16N8?purpose=inline)
+
+[Event-Driven Architecture Using Redis Streams](https://images.openai.com/static-rsc-4/NS91L6kSdUopx81xbb2gNBAkqJ21ajdurqF4yanhQlQgvlEEpjQcj5ovYsuv-ggTba7YcHCx4cy6FV0J_Y9lKR8TDksJer-xjFMjwDjsSjllNysyw7L6dl-HnaeIZV7pZm45T3XrVybCa5Ms9bFkU7QZ3I8yWJwUoqi66elP14c?purpose=inline)
+
+[10 Redis Streams + Node Patterns for Million-Event Throughput | by Nexumo | Medium](https://images.openai.com/static-rsc-4/apF5DZOI5rRAxpyBZPPxdQWzfMHCrBlxq9CLZoGR1WdwlXjG0oh745czbBp6dIjw6As-5fiGZm7YAxKvkeOaVT0cI5nDGD1z8rYCkfZkfJFlr6FrLwPV3poDnohfi8TP8Vb8YpHC11LN-DTQLKEcGKQ5I3x4xVR4pSH3oQ2sK3o?purpose=inline)
+
+[Redis Streams Explained: A Correct Mental Model for Distributed Message Processing | by Roy Wong | Apr, 2026 | Medium](https://images.openai.com/static-rsc-4/n7NHXxh8C-PCfLzVcXe_ZZGw0O3-ElIORSkvS3IXtlgJC3E8I92N8KBaZ_qVNsvzMTY-Qg-A_cXIiVov6hMWp-HnhfhNn-oNyyC2-dRFHODXzvPV3o2Q20p5fnOj6GouMpeOtctrMa8n9xeNnimIJAgnv-Qvpq6kq7Ux3wHBaHM?purpose=inline)
+
+[Grafana as the Core of an Enterprise Monitoring Platform: Integrating APM, Logs, and Metrics | by sharma-akhil | Medium](https://images.openai.com/static-rsc-4/4uImQDh9OzMIw4lVoc5vRxeGsFV26aKPmclUc0IIlPKTWQU4lvMOzCdTRZKNvijlRth7lgDcvsa-oqyurHZMD_RDNSbg0mNHw8iToFScdRae_VB71UnrOme_Uj8EEcOLljE34QIocXUfzq20w3vr38Ey9x9Qj-A6C9oSppDn78c?purpose=inline)
+
+هر Event در Stream یک ID دارد و اطلاعات آن به شکل Field/Value ذخیره می‌شود.
+
+### **تولید پیام**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XADD orders:stream * orderId 1001 customerId 50 amount 2500
+```
+
+</div>
+
+
+علامت `*` به Redis می‌گوید ID را خودش تولید کند.
+
+### **خواندن پیام**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XRANGE orders:stream - +
+```
+
+</div>
+
+
+### **خواندن پیام جدید**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XREAD COUNT 10 BLOCK 5000 STREAMS orders:stream $
+```
+
+</div>
+
+
+`$` یعنی از پیام‌های جدید بعد از آخرین پیام موجود شروع کن.
+
+### **Consumer Group**
+
+برای پردازش پیام توسط چند Consumer:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XGROUP CREATE orders:stream order-workers 0 MKSTREAM
+```
+
+</div>
+
+
+دریافت پیام توسط Consumer:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XREADGROUP GROUP order-workers worker-1 COUNT 10 BLOCK 5000 STREAMS orders:stream >
+```
+
+</div>
+
+
+بعد از پردازش موفق:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XACK orders:stream order-workers 1712345678901-0
+```
+
+</div>
+
+
+### **کاربرد**
+
+- Event Processing
+- پیام‌رسانی بین Microserviceها
+- Background Job Processing
+- Audit Log
+- Event-driven architecture
+
+### **تفاوت List و Stream**
+
+| List                         | Stream                           |
+| ---------------------------- | -------------------------------- |
+| ساختار ساده                  | ساختار Event Log                 |
+| Push/Pop                     | ثبت Event با ID                  |
+| مناسب Queue ساده             | مناسب Event Processing           |
+| امکانات Consumer Group ندارد | Consumer Group دارد              |
+| پیام حذف یا خارج می‌شود      | امکان نگهداری و خواندن مجدد پیام |
+
+اگر در یک معماری Microservice بخواهیم Consumerها، Pending Messages و ACK داشته باشیم، Stream معمولاً انتخاب قوی‌تری نسبت به List ساده است.
+
+# **8. Bitmap**
+
+Bitmap در Redis در واقع بر اساس String و عملیات Bitwise کار می‌کند؛ اما برای ذخیره وضعیت‌های Boolean بسیار بهینه است.
+
+هر Bit می‌تواند نشان‌دهنده یک وضعیت باشد.
+
+[The Fundamentals of Computer Systems: A High-Level Overview | by Christian Loschiavo | Medium](https://images.openai.com/static-rsc-4/-km6Nmd19eXuGuN0Y4uLm7ArKs99jFstcfhqbQCyEXqH2WOLtuuciTjA09kTuMV4IhdpjtnQ-o577-L7mcIyFvj93CCoh8ouRyk1DAUyrjeOfgzABhNQqClNNPHXHeiwMJgeLzUeAtK38VdLZmepR6hVyb7J0LjfujDaDH8jQ5M?purpose=inline)
+
+فرض کن می‌خواهیم وضعیت Login کاربران را برای 1 میلیون User نگهداری کنیم.
+
+به‌جای ذخیره:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+user:1 = true
+user:2 = false
+user:3 = true
+...
+```
+
+</div>
+
+
+می‌توانیم برای هر User یک Bit در Bitmap داشته باشیم.
+
+### **مثال**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SETBIT login:2026-11-20 1001 1
+SETBIT login:2026-11-20 1002 1
+SETBIT login:2026-11-20 1003 0
+```
+
+</div>
+
+
+بررسی وضعیت:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+GETBIT login:2026-11-20 1001
+```
+
+</div>
+
+
+شمارش کاربران فعال:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+BITCOUNT login:2026-11-20
+```
+
+</div>
+
+
+### **کاربرد**
+
+- User Activity
+- حضور و غیاب
+- Login tracking
+- Feature flags ساده
+- وضعیت‌های Boolean
+- شمارش کاربران فعال روزانه
+
+Bitmap برای تعداد بسیار زیادی وضعیت Boolean با Memory بسیار کم مفید است.
+
+# **9. HyperLogLog**
+
+HyperLogLog یک Data Structure احتمالی (Probabilistic) است که برای تخمین تعداد عناصر Unique طراحی شده است.
+
+یعنی اگر بخواهیم تعداد بازدیدکنندگان Unique یک سایت را محاسبه کنیم، لازم نیست تمام User IDها را به صورت کامل ذخیره کنیم.
+
+[Understanding HyperLogLog: A Visual Workflow | by Ranchana Kiriyapong | Medium](https://images.openai.com/static-rsc-4/NZB3HF4fVjUSBi6CzqAYGchhLPO3_q2joro82H98LhUZsoWNIrsRfrekZqNpS0c4hcqXsH5-GoEnzdp1tdCE1-RGOhKifD_r1E7uvyuVTcBGCcPbY32brUegzZGY_0SonnqNq5XBadho2u1aszcXyytkKSKj8P0liy0r2xL7I4s?purpose=inline)
+
+[System Design’s Secret Weapon: Probabilistic Data Structures | by Kunal Sinha | CodeToDeploy | Medium](https://images.openai.com/static-rsc-4/OCF-oW0DpAHpBVUyycvZTr5Ft8i6uWr-2tELf8hlKHj3B3MaGnxdWZ9JOa1hsEWvLYx_P0jBwedhvkeOdE9J-rqHYJNO6ly92GGO4S7m56ZMTLx7GboR9lf5kDAYnsm5p6pRIeHMOkWfX9lgFFPrzBDsXIIKH4xMPovrubymn7c?purpose=inline)
+
+[Approximation algorithms for stream and batch processing | PDF](https://images.openai.com/static-rsc-4/iaf3hKF8BbLxWMcBdrisudzY7lNFKTqde5FwUandRH1pcNlzMndZL5afjb0MvG49A9722QTQQt3wgMSHkeMLJTJNP0_lZqwlN45snnU7cFStKWKmZmAIYczXPS9OgHCABUh57MXOWZy4Wb0NJ-HhJRVVxEDrOXZZvLW3C_ADBcY?purpose=inline)
+
+[Probabilistic Data Structures: When to Use Bloom Filters and HyperLogLog](https://images.openai.com/static-rsc-4/LW3T8hGm0Jc7BzEC83V9eP4TLr_ONdLkrfQps1UFhIGXzMnr_ubihQffI3_lHtNrBUsHqV2pERgX8vtlwbQbrJ26zACRiC41O8hmk6rqp4BV1x_FME4NhpG7_zoXoFbT-QI8mHtE5novo0ACsf7dXdOgPO-dNTu7Jw9rFRV11Oc?purpose=inline)
+
+[初识Redis的数据类型HyperLogLog未来一段时间开发的项目或者需求会大量使用到Redis，趁着这段时间业务并不 - 掘金](https://images.openai.com/static-rsc-4/qe2tSzVM48BIgOO9KrlT0eh0gYl6B2aS41lae2JJbBdJY6Qdr4rzKrj6NtyDke1WJTH1R8Wt2JvcV2JrBYFo0m2OAxbATcsHaxJIxdz7YrxDBoQSkZzIhp1lpBme8tqXCCRJbaLlegqIYmnAQ7Te3ArPjHkzZj0JRQWPU8-5Yvg?purpose=inline)
+
+[Big Data Day LA 2015 - Large Scale Distinct Count -- The HyperLogLog algorithm and its applications by Felix Chern of OpenX | PDF](https://images.openai.com/static-rsc-4/YZbswY9z2GxFTpVGLpv9kT4IMVtVhYR-JHwaqcZH8T6S9hZXPUC_i5ncVdY-ApkjLHPDU79gbfxZvBs6dJJrfPP9OI23lfq_-aXTXLq5A43_Ocgo_1yIt54n9StE7CmqPn1SQAVLxA7ZwAW6ks1PgtBGOWLZXiNAKup_AA5iVTo?purpose=inline)
+
+[Building a Concurrent HyperLogLog Service 🦀 | by Enzo Lombardi | Rustaceans | Medium](https://images.openai.com/static-rsc-4/lvI_wQ6rGl4z_tYHBWf5FWeHlvWe5tvE2aRVhlgzJtlfNOrzdFrExz9b5MIb7smTczPZlE_wMPc2T9eZ2pkfCsUTrgOMm5SS7wwBtW4sVb-1pS0cYY_l62M9oWUPvSPcexEsp9_4k_h9phiea1HYuTFRFodeHR33dfA-H9k4fJg?purpose=inline)
+
+[Cardinality Estimation, HyperLogLog, and Bloom Filters | by Damini Bansal | Medium](https://images.openai.com/static-rsc-4/esU4ip-qmi0Prx0S5l0QU-2rK34X8S10jNje48DETnS7FVVBBsAniQ935MmxV_7tfKqssCnoPSvKUFGW-xsGWBNdPnJa0tiD9wTZ01fUy6h3Dipi0zsuKkA1sibqZ49042mo-eZXcwgnxBYqn6D_SAFIKu0iDZ21eSO4mAgbnRE?purpose=inline)
+
+### **مثال**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+PFADD visitors:today user1
+PFADD visitors:today user2
+PFADD visitors:today user3
+PFADD visitors:today user1
+```
+
+</div>
+
+
+تعداد Unique Visitorها:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+PFCOUNT visitors:today
+```
+
+</div>
+
+
+نتیجه تقریباً:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+3
+```
+
+</div>
+
+
+حتی اگر میلیون‌ها User اضافه کنیم، حافظه مصرفی HyperLogLog بسیار کم و ثابت (تقریباً 12KB برای هر ساختار در حالت استاندارد) است.
+
+### **کاربرد**
+
+- Unique Visitor
+- تعداد Unique Eventها
+- Unique IPها
+- آمار و Analytics
+- شمارش تقریبی Unique Entityها
+
+نکته:
+
+HyperLogLog مقدار دقیق ارائه نمی‌دهد؛ فقط تخمین می‌زند. اگر نیاز به لیست واقعی Userها یا حذف/جستجوی Member داشته باشی، باید از Set یا راهکار دیگری استفاده کنی.
+
+# **10. Geospatial (Geo)**
+
+Redis قابلیت نگهداری موقعیت جغرافیایی و جستجوی Locationهای نزدیک را دارد.
+
+در عمل داده‌های Geo در Redis با استفاده از Sorted Set و Encoding مختصات نگهداری می‌شوند.
+
+[Stop Using Redis as Just a Cache: The 7 Killer Use Cases Your Backend is Missing | by Prem Chandak | CodeX | Medium](https://images.openai.com/static-rsc-4/tZ4FKftAZXUiBBxWnCcQzCAz0961z7VlMyHBKtfOFLcGHmz9tzR2W5l6Nl5JNe5_ATQUFDL4bN0-P4KWyR3kcjcsc5jxJC-BeTp3y5KbrJNJGbUcH1UNkhKaS1-jL0OYLCmBLAx-2yCe0xHn066XMJhDzFiy3hEq3T5SgGpfoEk?purpose=inline)
+
+[GeoBike Part Two: Querying The Data | Redis](https://images.openai.com/static-rsc-4/0WE_uRc721oQQhftQeFNMhJZRQfliZ0VwKki1gphJ4OagAzTHD6TmHvZFhvkbNrXCCjQdKg5QCXq1vljIZcUyW-mDQ_0O1cfcoJUpdeR7oKeHjQXfxJLtD3GT-3pN0sa3CqFb893tZ-nESHsBcSCQvQNGyV7nYlL-WSvOVIo6js?purpose=inline)
+
+[Redis Use Cases Examples in the Real-World](https://images.openai.com/static-rsc-4/3YxwPwS5i6-_E3PBmr3KQECvDDnmUJOv-0FclnjL7c3oGu7njlTcUb9TbFP0iLXNAa61cVzbPiOybXluROHJprIcyKM7a3Ch8is67IUnX8ZNMvJ_dXP_RAVjnF3f4JJXJtRq5-eDcn3I76N6ZOlo10VX3Lu59ppt2Yr9Ikk0rgY?purpose=inline)
+
+[Redis6.2发布 地理位置功能增强了什么？-阿里云开发者社区](https://images.openai.com/static-rsc-4/xfOAirrqDYb3Gw0XQ_5YVpZN-JSAohVyC1cNxcREUQHxgQCZu7V2bPciA-GiKhQ-aF16F-KmwvSO_K8vWHx_TxU5dp_VY0mmLPuImNGAhecU01Q1e_TKRbgwhIpwnWPqWpPHbHJurHbGf5hI8-GVo3oR4qJTeJwDZDC_OAXtUuo?purpose=inline)
+
+[Implementing Geospatial Indexing in Spring Boot Using Redis Geohash | by Hüseyin Tugay Yeşilyurt | Medium](https://images.openai.com/static-rsc-4/gbr_wKNV4m5H1pPV9t2jm4uJSlKM4mVKPFGxwUujxPNee9b8_82EhWRMNeYoJe3KoJ_AF1ORJFKZE0h9yRxlZkDdhfy-YqtXvt5SSVVAlIYBQIbOhwi6VUVIMVKLZO4tPG0nvC9jQ_UOU6e8KQ8mgp1DoB60VMmybHVpgMd0zxc?purpose=inline)
+
+[Real-time Driver Location Tracking in .NET: Redis GEO, State Buffer and SignalR | Adrian Bailador | .NET](https://images.openai.com/static-rsc-4/oGOJEUes1t_1e19cT2S137pG7mU725bdBi6HZcnC6nhJK8uHVcvYAaarYObE-f0C9aIDxuUof1e_ZwQYzuVsLrEC_y8NAhHXZNC_q4fDicIf79kt1xc8oNCd8GjHIR6YlcczzpjKH2-OPJmnGXGvreZ6LHooFbNQ0QFTREvV2A4?purpose=inline)
+
+### **ثبت موقعیت**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+GEOADD drivers:locations 51.3890 35.6892 driver1
+GEOADD drivers:locations 51.4000 35.7000 driver2
+GEOADD drivers:locations 51.4100 35.7100 driver3
+```
+
+</div>
+
+
+ترتیب پارامترها:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+Longitude Latitude Member
+```
+
+</div>
+
+
+### **جستجوی راننده‌های نزدیک**
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+GEOSEARCH drivers:locations
+FROMLONLAT 51.3890 35.6892
+BYRADIUS 5 km
+ASC
+```
+
+</div>
+
+
+این Query راننده‌های داخل شعاع 5 کیلومتری را به ترتیب فاصله برمی‌گرداند.
+
+### **کاربرد**
+
+- پیدا کردن راننده نزدیک
+- اپلیکیشن‌های Delivery
+- Nearby Restaurants
+- Nearby Stores
+- Location-based services
+- پیدا کردن دستگاه‌های نزدیک
+
+# **11. Bitfield**
+
+Bitfield برای ذخیره چند مقدار عددی کوچک در Bitهای یک String استفاده می‌شود و می‌توان بدون خواندن کل داده، مقدارها را تغییر داد.
+
+مثلاً به‌جای ذخیره چند Counter جداگانه، می‌توان مقادیر کوچک را در یک ساختار Bit فشرده کرد.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+BITFIELD stats:users
+SET u8 0 10
+SET u8 1 20
+INCRBY u8 0 5
+GET u8 0
+```
+
+</div>
+
+
+در این مثال، هر مقدار `u8` یک عدد 8 بیتی unsigned است.
+
+### **کاربرد**
+
+- Counterهای فشرده
+- ذخیره Flagها
+- مصرف حافظه کمتر
+- عملیات عددی روی Bitها
+
+تفاوت Bitmap و Bitfield:
+
+- Bitmap برای وضعیت‌های Boolean (0 و 1) مناسب است.
+- Bitfield برای ذخیره مقادیر عددی کوچک با تعداد Bit مشخص مناسب است.
+
+# **12. Probabilistic Data Structures**
+
+Redis قابلیت‌هایی دارد که با مصرف حافظه بسیار کم، اطلاعات تقریبی را محاسبه می‌کنند.
+
+این ساختارها در بعضی نسخه‌ها یا با Redis Stack / Redis Modules در دسترس هستند؛ بنابراین باید تفاوت Data Typeهای اصلی Redis با قابلیت‌های افزوده‌شده را در نظر گرفت.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://redis.io\&sz=32)
+
+Docs
+
+
+
+| Data Structure   | کاربرد                           |
+| ---------------- | -------------------------------- |
+| Bloom Filter     | بررسی احتمالی وجود عنصر          |
+| Count-Min Sketch | تخمین تعداد تکرار یک عنصر        |
+| Cuckoo Filter    | بررسی وجود عناصر با قابلیت حذف   |
+| HyperLogLog      | تخمین تعداد عناصر Unique         |
+| Top-K            | شناسایی پرتکرارترین عناصر        |
+| t-digest         | تخمین Percentileها مثل P95 و P99 |
+
+### **مثال کاربردی Bloom Filter**
+
+فرض کن یک سیستم میلیون‌ها Email دارد و می‌خواهیم قبل از مراجعه به Database بررسی کنیم که آیا Email احتمالاً وجود دارد یا نه.
+
+Bloom Filter:
+
+- اگر بگوید عنصر وجود ندارد، قطعاً وجود ندارد.
+- اگر بگوید وجود دارد، ممکن است False Positive باشد؛ یعنی عنصر واقعاً وجود نداشته باشد.
+
+پس Bloom Filter برای کاهش Queryهای غیرضروری به Database مفید است، اما برای تأیید نهایی وجود کاربر مناسب نیست.
+
+# **13. Redis JSON**
+
+در Redis، قابلیت JSON با RedisJSON ارائه می‌شود که امکان ذخیره JSON به‌صورت ساختاریافته، خواندن و تغییر بخش‌های مشخص از آن را فراهم می‌کند.
+
+مثلاً:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+{
+  "id": 1001,
+  "name": "Ali",
+  "address": {
+    "city": "Baku",
+    "country": "Azerbaijan"
+  },
+  "skills": ["Java", "Redis", "Oracle"]
+}
+```
+
+</div>
+
+
+با RedisJSON می‌توان بخشی از JSON را تغییر داد، بدون اینکه کل JSON را به‌صورت String بازنویسی کنیم.
+
+مثلاً:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+JSON.SET user:1001 $ '{"id":1001,"name":"Ali","age":30}'
+```
+
+</div>
+
+
+خواندن یک فیلد:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+JSON.GET user:1001 $.name
+```
+
+</div>
+
+
+تغییر Age:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+JSON.SET user:1001 $.age 31
+```
+
+</div>
+
+
+### **کاربرد**
+
+- Cache کردن Objectهای پیچیده
+- نگهداری JSON
+- تغییر بخشی از Object
+- ساختارهای API
+- داده‌های Document-oriented
+
+توجه: RedisJSON جزو قابلیت‌های افزوده Redis است و باید دسترسی آن در Redis deployment بررسی شود؛ در همه نصب‌های Redis OSS لزوماً به شکل یک قابلیت built-in در دسترس نیست.
+
+# **14. Time Series**
+
+Redis Time Series برای نگهداری داده‌های دارای Timestamp مناسب است.
+
+مثلاً اطلاعات CPU Usage سرور:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+Timestamp          CPU
+10:00             20%
+10:01             35%
+10:02             50%
+10:03             30%
+```
+
+</div>
+
+
+[到底什么是时序数据库？ | Coding Husky](https://images.openai.com/static-rsc-4/L_vUPjA9L2J1Z8yLEqBenXW8cOYvCHwwNHRxikUhTC8D0owETDNGpVQj3P9QHWkU7VFeoLw5EJy5ccqrNd9OqlOTh-y36GNKe50MXZaG-Pggcz4j_i_WwRDtOea4BNKtGkuW8Sv9Ukk0rfedafBSbb0SDCetLFhH8AdwlafAMz4?purpose=inline)
+
+### **کاربرد**
+
+- Monitoring
+- CPU / RAM metrics
+- Sensor data
+- IoT
+- نرخ درخواست در بازه زمانی
+- Performance metrics
+
+Redis Time Series امکاناتی مانند:
+
+- ذخیره Timestamp و Value
+- Query روی بازه زمانی
+- Aggregation
+- Downsampling
+- تعیین Retention
+
+را فراهم می‌کند.
+
+این قابلیت نیز به Redis Time Series module / قابلیت‌های توزیع مربوطه وابسته است و باید availability آن را در deployment بررسی کرد.
+
+# **15. Vector Sets**
+
+Vector Sets برای داده‌های برداری و عملیات مشابهت (Similarity Search) طراحی شده‌اند.
+
+مثلاً در AI، متن به Embedding تبدیل می‌شود:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+"Java developer"
+       ↓
+[0.21, 0.75, -0.14, 0.88, ...]
+```
+
+</div>
+
+
+و یک متن دیگر:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+"Spring Boot programmer"
+       ↓
+[0.22, 0.73, -0.10, 0.85, ...]
+```
+
+</div>
+
+
+Redis Vector Sets برای یافتن بردارهای مشابه و کاربردهای AI/Recommendation/Search استفاده می‌شوند.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://redis.io\&sz=32)
+
+Docs
+
+
+
+[LLMs + Vector Databases: Building Memory Architectures for AI Agents | HackerNoon](https://images.openai.com/static-rsc-4/Rd7H8Q-pZK2PqTDG8vDooA48fhXv36i1xf2CyP4d-ElVm4czK6DwhD-9TrWXSX6Ynr3zfRvkMHu1oEshdNalGUdbN2yZCIC30YGxplelNVp1SboXKwhMCAfAi6iuZI9RzCFCPp6yBZUP1XgB3cMeqpU__8onQOhZKS6pTUBNoWk?purpose=inline)
+
+[Vector Database vs Graph Database for RAG: Similarity vs Understanding | by Khushbu Shah | Data Science Collective | Jan, 2026 | Medium](https://images.openai.com/static-rsc-4/eIuB2OdxI5gYnxYplll6sabYb_b_O7dTincrExxopEhRqa_LGFK82Ss8NnlcTauQNMtH69xXBU46ac3wgMRZ42O51mO42XDIFODxzBq8fmi-sxgOQCDM3RU_CyyQPpSyJ3QP0LHxlbwNiCQefnJt4opzrZ8zSzcGtSzTpj_ULDs?purpose=inline)
+
+[🚀 Introduction to Vector Search | Sciences 44](https://images.openai.com/static-rsc-4/jBnmo8QWApqJ3fLA-dI5_J6xoczD8Or1G1WlH0VVkkeL9jWjbPA3ox0SixIcziDop1QRoBWf4y7u2Wrbr6uDK8G2mIJGwXUOtVx4TdM2n8hYbzuNX3pwMV6fsr6GTekZxwMRyiuJ1Y01SwgXgiJtfuym1FnAMhHNbgfcUphH9UI?purpose=inline)
+
+[NSW 和 HNSW：基于小世界图的高效近邻搜索 | 脑洞一光年](https://images.openai.com/static-rsc-4/i4PpdpVbuHwaScloL6rMKsg2RhnXw-_dOJnADb0gUfk3XvNmuYwX5a1BisHXY0WmnEq3nJ7UmK6pJCHtICOABxsHWYRlZGF1lyjr9S39KGSxYsSmwP-JaFQmwddF35rmdRaX6BLSAcJgmgaLuF86mqpQ-S76-QGIC40NY2iIo-g?purpose=inline)
+
+[Vector Similarity Search in 2025: a RAG Engineer’s Field Guide](https://images.openai.com/static-rsc-4/KOJN0IvpgeMP5KCKmQFGAOJyuO2JuSqwcyEoCxlGMd_hfPEQIyHUYsewBiy_tRgLn_qDS8h6IfVyXjh4YQiD_izcWSa542AInBCRaxugAZJJ7-zEOfSMFOf6y5-ebQ6lIZ6C8k4lt4ivCllsX1vjgT3CZnLLq21yRR26E_6GziQ?purpose=inline)
+
+[Medium](https://images.openai.com/static-rsc-4/2cM-jD6D1HdfE-ACApvfsDk9x0LIWlqYyVlIDjZRCMy_Fbz5pC8dnthhiyzU2BseQoN6i_MeG4WCcMamOaTnA7w0j7OyjZ2R3yAUrdlniHOpAQl_h8DT5D1lSioemb_NpouHtoEPb0EJI_JiOsnUT-b72wPXNvPivPVNWO0-l5M?purpose=inline)
+
+[RAG Embeddings, Vector Databases, and Chunking](https://images.openai.com/static-rsc-4/fCG4GDgq-P1K4mv5qSy5ZkDO1tNVGiVUVdH17auv-rShL5OFI6oMPMeFmt9_CmpLGKGZsXUO5C9QSS-l1hT-wBCpV-FDL4V-waP7V35kjjPjNiz2pOINfMojIH8c4oACM1r6LPx3-SxoeLL5ph6OUE8lqsgOYfj6vZlJ3ZGrWlc?purpose=inline)
+
+[Paul Minogue](https://images.openai.com/static-rsc-4/sZsfUfmyXecoMeQaNbd3JwFnqriqbmDVmchbZjf70KJKKYbAzT-coG20D8sCqBKzyW-XmJtKgfOx5ikep3yWvWcJwuHIhqQZrsmvwWceefGiHgjuun6_SZXsYa2iaKn4-7GUkejWZ6JssSoqSPSoRlUGl24lUOqT3N2YIcp9SpI?purpose=inline)
+
+### **کاربرد**
+
+- Semantic Search
+- AI Chatbot
+- RAG
+- Recommendation Engine
+- Similarity Search
+
+مثلاً کاربر سؤال می‌کند:
+
+> How can I implement transactions in Spring?
+
+سیستم می‌تواند به جای جستجوی صرفاً کلمه‌ای، Embedding سؤال را با Embeddingهای ذخیره‌شده مقایسه کند و محتوای معنایی مشابه را پیدا کند.
+
+# **16. کدام Data Structure را در چه سناریویی انتخاب کنیم؟**
+
+این جدول برای مصاحبه و طراحی سیستم بسیار کاربردی است.
+
+| نیاز سیستم               | Redis Data Structure | مثال                       |
+| ------------------------ | -------------------- | -------------------------- |
+| Cache یک Object          | String یا Hash       | User Profile               |
+| نگهداری JSON             | String یا JSON       | API Response               |
+| Counter                  | String               | Page Views                 |
+| نگهداری Unique Values    | Set                  | کاربران Online             |
+| مرتب‌سازی بر اساس Score  | Sorted Set           | Ranking                    |
+| Queue ساده               | List                 | Job Queue                  |
+| Event Processing         | Stream               | Event-driven Microservices |
+| Boolean State            | Bitmap               | Daily Login                |
+| تخمین Unique Count       | HyperLogLog          | Unique Visitors            |
+| جستجوی Location نزدیک    | Geo                  | Nearby Drivers             |
+| ذخیره اعداد کوچک فشرده   | Bitfield             | Counterهای کم‌حجم          |
+| جستجوی احتمالی وجود عنصر | Bloom Filter         | کاهش DB lookup             |
+| نگهداری Metrics          | Time Series          | CPU/RAM                    |
+| Semantic Search          | Vector Sets          | AI / RAG                   |
+
+# **17. سناریوی واقعی در Spring Boot**
+
+فرض کن یک سیستم E-Commerce داری.
+
+## **Redis در یک E-Commerce**
+
+[Customer - Free user icons](https://images.openai.com/static-rsc-4/K0UkXu8XszwHbjo3NAkvCEO1HiSlodcTSXTiOE-cKCJK0Z6Q_WIA5DxzQcXsD0-Cspqoose0GDbAlSZloW4NhugGDs3qEOtPQS5T7d-dVHjCwEkfIC4_CSK-1ATfFEqRmaYXuGdpHT3cE55LrnF14MfYkVIwgKAvBdsoGYt52Mc?purpose=inline)
+
+**String / Hash**
+
+Cache اطلاعات کاربر و محصولات
+
+[Shopping cart 3d icon. Trolley with basket button](https://images.openai.com/static-rsc-4/PwBu4pwVfwYJMT2ntNpJKCEAeT3i0kxxjcOq3JBIjZKPyKNGhXHTEl5fNsn2JgrUsu50zazU3rv4xNtnOfJQH_MTkJBc3GzWZCZUyf01A5GPpplW_E9oZzBDDEj3i5LYzMqWVk6cUZLHs9Iqw-0dChafY-MC7kY3Owwa0NUkHv0FKjHrvV1dJSY6d_eqdAw6?purpose=inline)
+
+**Hash**
+
+Shopping Cart
+
+[Winner Award Cube Gold Laurel Wreath Podium, Stage or Pedestal with Golden Shopping Trolley Cart. 3d Rendering](https://images.openai.com/static-rsc-4/aueSgghct6xrtARIIN63osWPl2AM_cBQl3VKcXshFVjHZu5rdDqPWhwk3sybc0IU-P1kVEdH7WMKM4lV0SbKs05mQDEFSkDAJ1wf8a-8dB0Kt_tjknv_rAf-YTVBYV24fhqIu4U_E5vFZjYSwI-WCiqgJ5lRQWNeeAZ79X28GN06cYNnVIoIj1ntYhPMZp2g?purpose=inline)
+
+**Sorted Set**
+
+محبوب‌ترین محصولات و Ranking
+
+[(NestJS-20) NestJS & Bull: Building Scalable Background Job Queues with Redis | by Bhargava Chary | Medium](https://images.openai.com/static-rsc-4/MbkKQIa1wYXd_1cswfHfq-OclBkGmMrwJFcn50JbFLZI5J5vnBH59LcAMrihoz6n6ABSVjO9wZRhyyOOlNXACPm5YJWszkCIEXF5ogz7zGk94HGx7emMa2HdV-d8tkmJZrxpIuwamw_zL7FLFST7NhLePRVevPu7_EjDh6l34a8?purpose=inline)
+
+**Stream**
+
+پردازش Eventهای سفارش
+
+[Profile user - Free security icons](https://images.openai.com/static-rsc-4/l8BfAcgdCToc19L3uav5Qjpl8oIkhVzEuW6BtYGSANcQXwQ4ZqED10oZ6sQaZepIItEZb53YdUxw_3tA75SxYA4QfbtnmbRQ1mFbgTb2Wm15Pn2fsaE6B9gCnsYJtIFs3CXXXpByH3qC5_tsLOBX9u_zYSE-vWrKX6JhiwcQ0SE?purpose=inline)
+
+**String**
+
+Token، Session یا Cache مربوط به Authorization
+
+مثلاً Cache یک محصول:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SET product:1001 '{"id":1001,"name":"Laptop","price":1200}' EX 600
+```
+
+</div>
+
+
+Cache تعداد بازدید:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+INCR product:1001:views
+```
+
+</div>
+
+
+کاربرانی که محصول را Favorite کرده‌اند:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+SADD product:1001:favorites user:10 user:20 user:30
+```
+
+</div>
+
+
+Ranking محصولات:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+ZADD product:ranking 150 product:1001
+ZADD product:ranking 300 product:1002
+```
+
+</div>
+
+
+Queue پردازش سفارش:
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```
+XADD orders:events * orderId 1001 event CREATED
+```
+
+</div>
+
+
+با انتخاب درست Data Structure، می‌توان بخشی از workload را از Database اصلی کم کرد و عملیات سریع‌تری انجام داد.
+
+# **18. نکته مهم در مصاحبه: Redis همیشه فقط Cache نیست**
+
+Redis می‌تواند نقش‌های مختلفی در معماری داشته باشد:
+
+- Cache
+- Distributed Lock
+- Session Store
+- Rate Limiter
+- Message Processing
+- Event Stream
+- Real-time Ranking
+- Temporary Storage
+
+اما باید به نکاتی مثل Persistence، Replication، Eviction Policy، TTL، Memory Limit، Failover و Data Consistency توجه کنیم.
+
+مثلاً اگر Redis فقط Cache باشد، حذف داده با Eviction معمولاً قابل قبول است؛ اما اگر Redis محل نگهداری پیام‌های مهم باشد، سیاست حذف و Persistence باید بسیار دقیق‌تر طراحی شود.
+
+# **19. پاسخ انگلیسی مناسب مصاحبه**
+
+اگر Interviewer بپرسد:
+
+**What are the main Redis data structures and when would you use them?**
+
+می‌توانی این‌طور جواب بدهی:
+
+> Redis supports several data structures, and I choose them based on the use case.
+>
+> Strings are commonly used for caching, counters, tokens, and simple key-value data. Hashes are useful for storing objects with multiple fields, such as user profiles. Lists can be used for simple queues and ordered collections, while Sets are useful for storing unique elements and membership checks.
+>
+> Sorted Sets are particularly useful for leaderboards, ranking, and priority-based processing because each member has an associated score.
+>
+> Redis Streams are useful for event-driven processing and messaging, especially when we need consumer groups and message acknowledgment.
+>
+> Redis also supports specialized structures such as Bitmaps, HyperLogLog, Geospatial indexes, and probabilistic data structures, which are useful for analytics, location-based queries, and memory-efficient counting.
+>
+> The key point is to select the data structure based on access patterns, memory usage, atomic operations, and consistency requirements rather than using Redis as a simple key-value cache for everything.
+
+## **خلاصه‌ای که باید حفظ باشی**
+
+String → Cache & Counter
+
+Hash → Object / Field-Value
+
+List → Queue ساده
+
+Set → Unique / Membership
+
+Sorted Set → Ranking / Score
+
+Stream → Event / Consumer Group
+
+Bitmap → Boolean states
+
+HyperLogLog → Approximate Unique Count
+
+Geo → Nearby locations
+
+Bloom Filter → Probabilistic existence check
+
+JSON → Structured JSON documents
+
+Time Series → Timestamped metrics
+
+Vector Sets → Similarity Search / AI
+
+## **سؤال تمرینی مصاحبه**
+
+فرض کن در یک سیستم فروش آنلاین:
+
+- باید محصولات پربازدید را Cache کنی.
+- تعداد بازدید هر محصول را افزایش دهی.
+- ۱۰۰ محصول محبوب را سریع نمایش دهی.
+- محصولات Favorite هر کاربر را ذخیره کنی.
+- Eventهای ثبت سفارش را به چند Consumer پردازش‌کننده ارسال کنی.
+
+**برای هر مورد، کدام Redis Data Structure را انتخاب می‌کنی و چرا؟**
+
+اگر این سؤال را درست جواب بدهی، عملاً تفاوت کاربردی اکثر Redis Data Structureهای مهم را یاد گرفته‌ای.
+</div>
+
+
+
+<!-- SOURCE: 2.md -->
+# File: 2.md
+
+Moving on to **Phase 2: Mastering SQL**. This is where you learn to actually talk to your database—to ask it questions, to add or change information, and to shape the structure of your data itself.
+
+Here’s a step-by-step breakdown of the core SQL skills to acquire.
+
+### 📝 Step 1: The Foundation – Retrieving Data with `SELECT`
+
+The `SELECT` statement is the most fundamental SQL command. It's how you ask the database to show you data. You'll build on it by adding clauses to filter, sort, and refine your results.
+
+*   **Basic Retrieval**: Start with `SELECT column1, column2 FROM table_name;` to pick specific columns. Use `SELECT *` to see all columns (good for exploring, but not for production code).
+*   **Filtering Rows (`WHERE`)**: Use the `WHERE` clause to specify conditions a row must meet to be included in the results. You'll learn to use operators like `=`, `>`, `<`, `BETWEEN`, `IN`, and `LIKE` (for pattern matching).
+*   **Sorting Results (`ORDER BY`)**: Control the presentation order of your output with `ORDER BY column_name ASC` (ascending, default) or `DESC` (descending).
+*   **Eliminating Duplicates (`DISTINCT`)**: Use `SELECT DISTINCT column_name` to see only unique values in a column.
+
+**Hands-On Practice**: On your Oracle Live SQL or local database, try these queries. (Oracle Live SQL often has sample tables like `EMPLOYEES` and `DEPARTMENTS` you can use).
+```sql
+-- See all data in the employees table
+SELECT * FROM employees;
+
+-- Select just names and salaries
+SELECT first_name, last_name, salary FROM employees;
+
+-- Filter for employees in department 50
+SELECT first_name, last_name, salary
+FROM employees
+WHERE department_id = 50;
+
+-- Sort those employees by salary, highest first
+SELECT first_name, last_name, salary
+FROM employees
+WHERE department_id = 50
+ORDER BY salary DESC;
+```
+
+### 🔗 Step 2: Connecting Data – Joins and Subqueries
+
+Real-world data is spread across many tables. Joins and subqueries let you combine that data into a single, meaningful result set.
+
+*   **The Concept of a Join**: A join links rows from two or more tables based on a related column between them (usually a primary key/foreign key relationship).
+*   **The Main Types**:
+    *   **`INNER JOIN`**: Returns only the rows that have a match in **both** tables. This is the most common type.
+    *   **`LEFT [OUTER] JOIN`**: Returns **all** rows from the left table, and the matched rows from the right table. If there is no match, the result is `NULL` on the right side.
+    *   **`RIGHT [OUTER] JOIN`**: The reverse of a LEFT JOIN; returns all rows from the right table.
+    *   **`FULL [OUTER] JOIN`**: Returns all rows when there is a match in **either** table.
+*   **Subqueries**: A subquery is a `SELECT` statement nested inside another SQL statement. You can use it in the `WHERE` or `FROM` clause to perform multi-step filtering, like "find employees who earn more than the average salary."
+
+**Hands-On Practice**:
+```sql
+-- Inner join: get employee names and their department names
+SELECT e.first_name, e.last_name, d.department_name
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.department_id;
+
+-- Left join: list all departments, including those with no employees
+SELECT d.department_name, e.first_name, e.last_name
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id;
+
+-- Subquery: find employees who earn more than the average salary
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+```
+
+### 📊 Step 3: Summarizing Data – Aggregation and Analytic Functions
+
+Instead of looking at individual rows, you'll often need to summarize data into groups.
+
+*   **Aggregate Functions**: These functions perform a calculation on a set of rows and return a single result. Common ones are `SUM()`, `AVG()`, `COUNT()`, `MAX()`, and `MIN()`. They are almost always used with the `GROUP BY` clause, which groups rows that have the same values in specified columns.
+*   **`HAVING` Clause**: Just like `WHERE` filters individual rows, `HAVING` filters **groups** created by `GROUP BY`. For example, "show me departments where the average salary is greater than 5000."
+*   **Analytic (Window) Functions**: This is a powerful Oracle SQL feature. They perform calculations across a set of rows that are related to the current row, without collapsing them into a single output row like aggregates do. You'll learn to use `ROW_NUMBER()`, `RANK()`, and `DENSE_RANK()` with the `OVER()` clause to solve complex ranking and reporting problems.
+
+**Hands-On Practice**:
+```sql
+-- Aggregate: count employees and average salary per department
+SELECT department_id, COUNT(*) AS num_employees, AVG(salary) AS avg_salary
+FROM employees
+GROUP BY department_id
+HAVING AVG(salary) > 5000;
+
+-- Analytic: rank employees by salary within each department
+SELECT first_name, last_name, department_id, salary,
+       RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_rank
+FROM employees;
+```
+
+### ✏️ Step 4: Modifying Data – DML (Data Manipulation Language)
+
+DML statements are how you change the data inside your tables. The three core commands are `INSERT`, `UPDATE`, and `DELETE`.
+
+*   **`INSERT`**: Adds new rows to a table. You can insert a single row or multiple rows at once.
+*   **`UPDATE`**: Modifies existing rows. **Always use a `WHERE` clause** unless you intend to change every row in the table.
+*   **`DELETE`**: Removes rows from a table. Again, **be very careful with the `WHERE` clause**.
+*   **Transactions (`COMMIT` / `ROLLBACK`)**: In Oracle, DML changes are not permanent until you issue a `COMMIT`. If you make a mistake, you can use `ROLLBACK` to undo the changes made since your last `COMMIT`.
+
+**Hands-On Practice** (Remember to `COMMIT` or `ROLLBACK` after experimenting):
+```sql
+-- Insert a new department
+INSERT INTO departments (department_id, department_name)
+VALUES (999, 'New Department');
+-- COMMIT; -- Uncomment to save permanently
+
+-- Update the salary of a specific employee
+UPDATE employees
+SET salary = salary * 1.10
+WHERE employee_id = 100;
+
+-- Delete the department you just created (before committing)
+DELETE FROM departments WHERE department_id = 999;
+-- ROLLBACK; -- To undo the insert and delete
+```
+
+### 🏗️ Step 5: Defining Structure – DDL (Data Definition Language)
+
+DDL statements define, change, and remove database objects like tables. The most important one to start with is `CREATE TABLE`.
+
+*   **Creating Tables**: You define a table by specifying its columns and their data types (e.g., `NUMBER`, `VARCHAR2`, `DATE`).
+*   **Constraints**: These are rules that enforce data integrity. You should learn to use:
+    *   **`PRIMARY KEY`**: Uniquely identifies each row.
+    *   **`FOREIGN KEY`**: Enforces a link to a primary key in another table.
+    *   **`NOT NULL`**: Ensures a column cannot be empty.
+    *   **`UNIQUE`**: Ensures all values in a column are different.
+    *   **`CHECK`**: Ensures values meet a specific condition.
+
+**Hands-On Practice**:
+```sql
+CREATE TABLE projects (
+    project_id    NUMBER(6) PRIMARY KEY,
+    project_name  VARCHAR2(100) NOT NULL,
+    start_date    DATE,
+    end_date      DATE,
+    budget        NUMBER(10,2),
+    department_id NUMBER(4),
+    CONSTRAINT fk_dept
+        FOREIGN KEY (department_id)
+        REFERENCES departments(department_id)
+);
+```
+
+### 🎯 Your Practice Plan & Next Steps
+
+1.  **Use a Sample Schema**: The best way to practice is with real data. Oracle provides the **`HR` (Human Resources) sample schema** with tables like `EMPLOYEES`, `DEPARTMENTS`, and `JOBS`. You can find scripts to install it in your local Docker database or use it directly if your Live SQL session includes it.
+2.  **Follow a Structured Tutorial**: Look for "Oracle Database SQL" tutorials. The topics covered here align with the **Oracle Database SQL Certified Associate (1Z0-071)** exam objectives, which is a great syllabus to follow for structured learning.
+3.  **Explore Official Documentation**: For every command, the [Oracle SQL Language Reference](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/) is the ultimate source of truth.
+
+Once you feel comfortable writing queries that join multiple tables, summarize data, and modify it with DML, you'll have a solid SQL foundation. Let me know when you're ready, and we can move on to **Phase 3: Procedural SQL (PL/SQL)** to start building logic inside the database.
+
+
+
+<!-- SOURCE: 1.md -->
+# File: 1.md
+
+<div dir="rtl" style="text-align: right; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+# آزمون جامع Redis و SQL
+بر اساس فایل‌های ۱ و ۲ — همراه با پاسخنامه  
+زمان پیشنهادی: ۷۵ دقیقه | بارم کل: ۱۰۰ نمره
+
+> نکته: در سوالات Redis فرض بر Redis پایه است؛ برای RedisJSON، Time Series و Vector Sets دسترسی به ماژول/Redis Stack باید بررسی شود. در SQL از نمونه‌اسکیمای HR با جداول `EMPLOYEES` و `DEPARTMENTS` استفاده شده است.
+
+---
+
+## بخش ۱: Redis — چندگزینه‌ای (۱۰ سوال × ۲ نمره = ۲۰ نمره)
+
+1. کدام Data Structure برای Leaderboard و رتبه‌بندی بر اساس امتیاز مناسب‌تر است؟  
+   A) String  
+   B) Hash  
+   C) Sorted Set  
+   D) List
+
+2. برای نگهداری Object با فیلدهای مستقل مثل User Profile، کدام گزینه مناسب‌تر است؟  
+   A) String  
+   B) Hash  
+   C) Set  
+   D) Stream
+
+3. کدام دستور برای Counter به‌صورت Atomic مناسب است؟  
+   A) SET  
+   B) INCR  
+   C) HSET  
+   D) SADD
+
+4. کدام ساختار برای نگهداری مقادیر Unique و بررسی سریع Membership مناسب است؟  
+   A) List  
+   B) Set  
+   C) Sorted Set  
+   D) Bitmap
+
+5. کدام ساختار برای Event Processing با Consumer Group و ACK مناسب است؟  
+   A) List  
+   B) Stream  
+   C) Hash  
+   D) Geo
+
+6. کدام ساختار برای ذخیره وضعیت‌های Boolean با مصرف حافظه کم مناسب است؟  
+   A) Bitmap  
+   B) HyperLogLog  
+   C) Set  
+   D) Stream
+
+7. کدام ساختار برای تخمین تعداد عناصر Unique طراحی شده است؟  
+   A) Set  
+   B) HyperLogLog  
+   C) Sorted Set  
+   D) Bitmap
+
+8. کدام قابلیت Redis برای جستجوی مکان‌های نزدیک استفاده می‌شود؟  
+   A) Geo  
+   B) Stream  
+   C) Hash  
+   D) List
+
+9. کدام جمله درباره تفاوت List و Stream صحیح است؟  
+   A) List دارای Consumer Group است.  
+   B) Stream دارای ACK و Pending Messages است.  
+   C) Stream اصلاً ID ندارد.  
+   D) List همیشه برای Event Processing مناسب‌تر است.
+
+10. برای ذخیره JSON ساختاریافته و تغییر یک فیلد بدون بازنویسی کل JSON، کدام گزینه مناسب است؟  
+    A) RedisJSON  
+    B) Bitfield  
+    C) HyperLogLog  
+    D) Geo
+
+---
+
+## بخش ۲: Redis — صحیح/غلط (۵ سوال × ۲ نمره = ۱۰ نمره)
+
+1. Redis String فقط می‌تواند متن نگهداری کند و نمی‌تواند عدد یا داده Binary ذخیره کند.
+2. Hash برای تغییر یک فیلد بدون بازنویسی کل Object مناسب است.
+3. HyperLogLog مقدار دقیق تعداد عناصر Unique را برمی‌گرداند.
+4. در Sorted Set هر Member یک Score دارد و Redis اعضا را بر اساس Score مرتب می‌کند.
+5. اگر Bloom Filter بگوید عنصر وجود ندارد، قطعاً وجود ندارد؛ اما اگر بگوید وجود دارد، ممکن است False Positive رخ دهد.
+
+---
+
+## بخش ۳: Redis — دستورات و پاسخ کوتاه (۵ سوال × ۴ نمره = ۲۰ نمره)
+
+1. دستور Redis برای Cache کردن JSON کاربر `user:1001` با TTL برابر ۳۰۰ ثانیه را بنویسید.
+
+2. یک Hash برای `user:1001` با فیلدهای `name=Ali`، `age=30`، `email=ali@example.com` بسازید و سپس فقط `age` را به `31` تغییر دهید.
+
+3. یک Queue ساده FIFO با List بسازید که شامل `job1`، `job2` و `job3` باشد و اولین Job را Pop کند.
+
+4. سه کاربر `Ali=100`، `Reza=250` و `Sara=180` را در Sorted Set با نام `leaderboard` اضافه کنید و Top 3 را از بالاترین امتیاز دریافت کنید.
+
+5. برای Stream با نام `orders:stream` یک Event سفارش اضافه کنید، Consumer Group با نام `order-workers` بسازید، یک Consumer پیام را بخواند و سپس ACK کند. دستورات اصلی را بنویسید.
+
+---
+
+## بخش ۴: SQL — چندگزینه‌ای (۸ سوال × ۲ نمره = ۱۶ نمره)
+
+1. برای فیلتر کردن ردیف‌ها از کدام Clause استفاده می‌شود؟  
+   A) ORDER BY  
+   B) WHERE  
+   C) GROUP BY  
+   D) HAVING
+
+2. `INNER JOIN` چه نتیجه‌ای برمی‌گرداند؟  
+   A) همه ردیف‌های جدول چپ  
+   B) فقط ردیف‌هایی که در هر دو جدول Match دارند  
+   C) همه ردیف‌های جدول راست  
+   D) همه ردیف‌ها حتی بدون Match
+
+3. برای فیلتر کردن گروه‌های ساخته‌شده با `GROUP BY` از کدام Clause استفاده می‌شود؟  
+   A) WHERE  
+   B) HAVING  
+   C) ORDER BY  
+   D) DISTINCT
+
+4. برای حذف مقادیر تکراری در خروجی کدام گزینه مناسب است؟  
+   A) DISTINCT  
+   B) UNIQUE  
+   C) GROUP  
+   D) HAVING
+
+5. کدام Analytic Function در رتبه‌بندی ممکن است شکاف ایجاد کند؟  
+   A) ROW_NUMBER()  
+   B) RANK()  
+   C) DENSE_RANK()  
+   D) COUNT()
+
+6. در Oracle تغییرات DML چه زمانی دائمی می‌شوند؟  
+   A) با ROLLBACK  
+   B) با COMMIT  
+   C) با SELECT  
+   D) با SAVEPOINT
+
+7. کدام Constraint به‌طور یکتا هر ردیف را شناسایی می‌کند؟  
+   A) NOT NULL  
+   B) CHECK  
+   C) PRIMARY KEY  
+   D) FOREIGN KEY
+
+8. کدام گزینه برای پیدا کردن کارمندانی که حقوقشان بیشتر از میانگین است، صحیح است؟  
+   A) `SELECT ... FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);`  
+   B) `SELECT ... FROM employees HAVING salary > AVG(salary);`  
+   C) `SELECT ... FROM employees ORDER BY AVG(salary);`  
+   D) `SELECT ... FROM employees GROUP BY salary > AVG(salary);`
+
+---
+
+## بخش ۵: SQL — صحیح/غلط (۵ سوال × ۲ نمره = ۱۰ نمره)
+
+1. استفاده از `SELECT *` در کد Production توصیه می‌شود.
+2. `LEFT JOIN` همه ردیف‌های جدول چپ و ردیف‌های Match‌شده جدول راست را برمی‌گرداند.
+3. `WHERE` برای فیلتر کردن گروه‌های ساخته‌شده با `GROUP BY` استفاده می‌شود.
+4. `UPDATE` بدون `WHERE` همه ردیف‌های جدول را تغییر می‌دهد.
+5. `ROLLBACK` تغییرات بعد از آخرین `COMMIT` را undo می‌کند.
+
+---
+
+## بخش ۶: SQL — عملی (۶ سوال × ۴ نمره = ۲۴ نمره)
+
+1. نام، نام خانوادگی و حقوق کارمندانی را نمایش دهید که `department_id = 50` دارند و بر اساس حقوق نزولی مرتب شوند.
+
+2. نام کارمند و نام دپارتمان او را با `INNER JOIN` بین `employees` و `departments` نمایش دهید.
+
+3. همه دپارتمان‌ها را نمایش دهید، حتی دپارتمان‌هایی که کارمند ندارند؛ همراه با نام کارمند در صورت وجود.
+
+4. برای هر دپارتمان تعداد کارکنان و میانگین حقوق را نمایش دهید، فقط دپارتمان‌هایی که میانگین حقوقشان بیشتر از ۵۰۰۰ است.
+
+5. کارمندان را بر اساس حقوق در هر دپارتمان رتبه‌بندی کنید و رتبه را در ستون `salary_rank` نمایش دهید.
+
+6. جدول `projects` را با ستون‌های `project_id` به‌عنوان Primary Key، `project_name` غیر Null، `start_date`، `end_date`، `budget` و `department_id` به‌عنوان Foreign Key به `departments(department_id)` بسازید.
+
+---
+
+# پاسخنامه
+
+## بخش ۱: Redis — چندگزینه‌ای
+
+1. C) Sorted Set
+2. B) Hash
+3. B) INCR
+4. B) Set
+5. B) Stream
+6. A) Bitmap
+7. B) HyperLogLog
+8. A) Geo
+9. B) Stream دارای ACK و Pending Messages است.
+10. A) RedisJSON
+
+---
+
+## بخش ۲: Redis — صحیح/غلط
+
+1. غلط — Redis String می‌تواند متن، عدد، JSON، Token و داده Binary نگهداری کند.
+2. صحیح
+3. غلط — HyperLogLog تخمین می‌زند و مقدار دقیق نمی‌دهد.
+4. صحیح
+5. صحیح
+
+---
+
+## بخش ۳: Redis — دستورات
+
+1.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```redis
+SET user:1001 '{"id":1001,"name":"Ali","age":30}' EX 300
+```
+
+</div>
+
+
+2.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```redis
+HSET user:1001 name Ali age 30 email ali@example.com
+HSET user:1001 age 31
+```
+
+</div>
+
+
+3.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```redis
+LPUSH jobs job1 job2 job3
+RPOP jobs
+```
+
+</div>
+
+خروجی Pop اول: `job1`
+
+4.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```redis
+ZADD leaderboard 100 Ali 250 Reza 180 Sara
+ZREVRANGE leaderboard 0 2 WITHSCORES
+```
+
+</div>
+
+
+5.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```redis
+XADD orders:stream * orderId 1001 customerId 50 amount 2500
+XGROUP CREATE orders:stream order-workers 0 MKSTREAM
+XREADGROUP GROUP order-workers worker-1 COUNT 10 BLOCK 5000 STREAMS orders:stream >
+XACK orders:stream order-workers <message-id>
+```
+
+</div>
+
+در `XACK` باید `<message-id>` همان ID پیام خوانده‌شده باشد.
+
+---
+
+## بخش ۴: SQL — چندگزینه‌ای
+
+1. B) WHERE
+2. B) فقط ردیف‌هایی که در هر دو جدول Match دارند
+3. B) HAVING
+4. A) DISTINCT
+5. B) RANK()
+6. B) با COMMIT
+7. C) PRIMARY KEY
+8. A
+
+---
+
+## بخش ۵: SQL — صحیح/غلط
+
+1. غلط
+2. صحیح
+3. غلط — برای فیلتر گروه‌ها از `HAVING` استفاده می‌شود.
+4. صحیح
+5. صحیح
+
+---
+
+## بخش ۶: SQL — پاسخ عملی
+
+1.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```sql
+SELECT first_name, last_name, salary
+FROM employees
+WHERE department_id = 50
+ORDER BY salary DESC;
+```
+
+</div>
+
+
+2.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```sql
+SELECT e.first_name, e.last_name, d.department_name
+FROM employees e
+INNER JOIN departments d
+  ON e.department_id = d.department_id;
+```
+
+</div>
+
+
+3.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```sql
+SELECT d.department_name, e.first_name, e.last_name
+FROM departments d
+LEFT JOIN employees e
+  ON d.department_id = e.department_id;
+```
+
+</div>
+
+
+4.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```sql
+SELECT department_id,
+       COUNT(*) AS num_employees,
+       AVG(salary) AS avg_salary
+FROM employees
+GROUP BY department_id
+HAVING AVG(salary) > 5000;
+```
+
+</div>
+
+
+5.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```sql
+SELECT first_name,
+       last_name,
+       department_id,
+       salary,
+       RANK() OVER (
+         PARTITION BY department_id
+         ORDER BY salary DESC
+       ) AS salary_rank
+FROM employees;
+```
+
+</div>
+
+
+6.
+
+<div dir="ltr" style="text-align: left; font-family: 'B Nazanin', Tahoma, sans-serif;">
+
+```sql
+CREATE TABLE projects (
+    project_id    NUMBER(6) PRIMARY KEY,
+    project_name  VARCHAR2(100) NOT NULL,
+    start_date    DATE,
+    end_date      DATE,
+    budget        NUMBER(10,2),
+    department_id NUMBER(4),
+    CONSTRAINT fk_dept
+        FOREIGN KEY (department_id)
+        REFERENCES departments(department_id)
+);
+```
+
+</div>
+
+
+---
+
+## جمع‌بندی نمره‌دهی
+
+| بخش | موضوع | بارم |
+|---|---|---|
+| ۱ | Redis چندگزینه‌ای | ۲۰ |
+| ۲ | Redis صحیح/غلط | ۱۰ |
+| ۳ | Redis دستورات | ۲۰ |
+| ۴ | SQL چندگزینه‌ای | ۱۶ |
+| ۵ | SQL صحیح/غلط | ۱۰ |
+| ۶ | SQL عملی | ۲۴ |
+| **کل** |  | **۱۰۰** |
+</div>
+
