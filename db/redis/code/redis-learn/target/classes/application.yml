@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+spring:
+  data:
+    redis:
+      host: 192.168.2.10          # <-- your Linux machine's IP
+      port: 6379
+      password: YourStrongPassword123
+      timeout: 2s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+logging:
+  level:
+    org.springframework.data.redis: INFO
