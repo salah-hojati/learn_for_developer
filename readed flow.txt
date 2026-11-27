@@ -2,7 +2,8 @@
 1=db/oracle/2.md
 2=db/redis/interView/1.md
 3=exam/1.md
-# step 1
+
+
 4=pragraming/javaCore/RegularExpression/2.md
 5=pragraming/javaCore/thread/1.md
 6=pragraming/javaCore/java8/1.md
