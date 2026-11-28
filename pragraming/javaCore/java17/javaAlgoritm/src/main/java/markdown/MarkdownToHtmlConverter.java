@@ -28,7 +28,7 @@ public class MarkdownToHtmlConverter {
         String defaultName = "doc";
 
       //  Path inputPath  = Path.of(System.getProperty("user.dir"), defaultName + ".md");
-        Path inputPath  = Path.of("/home/salah/IdeaProjects/Document/14050810_تحلیل و شناخت_PCRS_PC-Provider (1)/test.md");
+        Path inputPath  = Path.of("/home/salah/IdeaProjects/ProbateCertificateRegisterRequest/xxxxxxxxxxxxx.md");
         Path outputPath = Path.of(System.getProperty("user.dir"), defaultName + ".html");
 
         if (args.length >= 2) {
